@@ -12,6 +12,7 @@ import dev.restate.common.function.ThrowingFunction;
 import dev.restate.common.function.ThrowingSupplier;
 import dev.restate.sdk.common.AbortedExecutionException;
 import dev.restate.sdk.endpoint.definition.HandlerContext;
+import dev.restate.sdk.endpoint.definition.LoggingContext;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -51,6 +52,11 @@ class Util {
     } catch (ExecutionException | CompletionException e) {
       sneakyThrow(e.getCause());
       return null; // Previous statement throws an exception
+    } finally {
+      // Every await in the Java API funnels through here, which makes this the point where the
+      // handler resumes and so the only place the invocation status can have changed under it:
+      // the state machine advanced on the core thread while this thread was parked.
+      LoggingContext.refreshStatus();
     }
   }
 

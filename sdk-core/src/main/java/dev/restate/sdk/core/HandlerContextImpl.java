@@ -25,13 +25,13 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 class HandlerContextImpl implements HandlerContextInternal {
 
-  private static final Logger LOG = LogManager.getLogger(HandlerContextImpl.class);
+  private static final Logger LOG = LoggerFactory.getLogger(HandlerContextImpl.class);
 
   private final StateMachine stateMachine;
   private final ExternalProgressChannel externalProgressChannel;
@@ -156,6 +156,11 @@ class HandlerContextImpl implements HandlerContextInternal {
   @Override
   public StateMachine.InvocationState getInvocationState() {
     return this.stateMachine.state();
+  }
+
+  @Override
+  public String loggingInvocationStatus() {
+    return this.stateMachine.state().toString();
   }
 
   @Override

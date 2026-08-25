@@ -140,7 +140,7 @@ dependencies {
 
   // Runtime deps exported via the POM but NOT bundled into the shadow jar.
   shadow(project(":sdk-common"))
-  shadow(libs.log4j.api)
+  shadow(libs.slf4j.api)
   shadow(libs.opentelemetry.api)
   // Jackson for the endpoint manifest (jsonSchema2Pojo-generated POJOs)
   shadow(libs.jackson.annotations)
@@ -149,16 +149,13 @@ dependencies {
   // Shaded + relocated into the jar: the pure-Java state machine's wire codec uses protobuf
   shade(libs.protobuf.java)
 
-  // We don't want a hard-dependency on it
-  compileOnly(libs.log4j.core)
-
   // java23 (FFM) overlay
   "java23CompileOnly"(libs.jspecify)
 
   testCompileOnly(libs.jspecify)
   testAnnotationProcessor(project(":sdk-api-gen"))
   kspTest(project(":sdk-api-kotlin-gen"))
-  testImplementation(libs.log4j.api)
+  testImplementation(libs.slf4j.api)
   testImplementation(project(":sdk-common"))
   testImplementation(project(":client"))
   testImplementation(project(":client-kotlin"))
@@ -174,6 +171,7 @@ dependencies {
   testImplementation(libs.junit.jupiter)
   testImplementation(libs.assertj)
   testImplementation(libs.log4j.core)
+  testRuntimeOnly(libs.log4j.slf4j2.impl)
   testImplementation(libs.kotlinx.coroutines.core)
   testImplementation(libs.kotlinx.serialization.core)
   testImplementation(libs.vertx.junit5)

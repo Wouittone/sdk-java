@@ -11,7 +11,7 @@ dependencies {
   compileOnly(libs.jspecify)
   compileOnly(libs.jetbrains.annotations)
 
-  implementation(libs.log4j.api)
+  api(libs.slf4j.api)
 
   testImplementation(libs.junit.jupiter)
   testImplementation(libs.assertj)

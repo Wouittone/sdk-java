@@ -15,12 +15,12 @@ import java.nio.ByteBuffer;
 import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.concurrent.Flow;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 class HttpRequestFlowAdapter implements Flow.Publisher<Slice> {
 
-  private static final Logger LOG = LogManager.getLogger(HttpRequestFlowAdapter.class);
+  private static final Logger LOG = LoggerFactory.getLogger(HttpRequestFlowAdapter.class);
 
   private final HttpServerRequest httpServerRequest;
 

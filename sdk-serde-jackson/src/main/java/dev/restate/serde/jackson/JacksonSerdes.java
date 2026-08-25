@@ -16,9 +16,9 @@ import com.github.victools.jsonschema.module.jackson.JacksonModule;
 import com.github.victools.jsonschema.module.jackson.JacksonOption;
 import dev.restate.serde.Serde;
 import java.util.stream.StreamSupport;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * {@link Serde} implementations for Jackson.
@@ -45,7 +45,7 @@ public final class JacksonSerdes {
 
   private JacksonSerdes() {}
 
-  private static final Logger LOG = LogManager.getLogger(JacksonSerdes.class);
+  private static final Logger LOG = LoggerFactory.getLogger(JacksonSerdes.class);
 
   static final ObjectMapper defaultMapper;
 

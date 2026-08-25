@@ -33,9 +33,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Flow;
 import java.util.function.Consumer;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Legacy pure-Java {@link StateMachine}, used on JDK &lt; 23 or when the native shared-core library
@@ -44,7 +44,7 @@ import org.jspecify.annotations.Nullable;
  */
 public final class LegacyStateMachine implements StateMachine {
 
-  private static final Logger LOG = LogManager.getLogger(LegacyStateMachine.class);
+  private static final Logger LOG = LoggerFactory.getLogger(LegacyStateMachine.class);
 
   static final int CANCEL_SIGNAL_ID = 1;
 

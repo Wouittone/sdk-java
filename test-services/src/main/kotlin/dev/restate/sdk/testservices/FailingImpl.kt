@@ -13,12 +13,12 @@ import dev.restate.sdk.kotlin.*
 import dev.restate.sdk.testservices.contracts.Failing
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.time.Duration.Companion.milliseconds
-import org.apache.logging.log4j.LogManager
-import org.apache.logging.log4j.Logger
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 class FailingImpl : Failing {
   companion object {
-    private val LOG: Logger = LogManager.getLogger(FailingImpl::class.java)
+    private val LOG: Logger = LoggerFactory.getLogger(FailingImpl::class.java)
   }
 
   private val eventualSuccessCalls = AtomicInteger(0)

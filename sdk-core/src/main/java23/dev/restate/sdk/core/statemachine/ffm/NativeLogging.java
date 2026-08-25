@@ -17,20 +17,19 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.nio.charset.StandardCharsets;
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.spi.StandardLevel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.event.Level;
 
 /**
- * Bridges the native {@code restate-sdk-shared-core} tracing output into Log4j2.
+ * Bridges the native {@code restate-sdk-shared-core} tracing output into SLF4J.
  *
  * <p>At startup the FFM state machine installs a {@code tracing} subscriber in the native core (see
  * {@code init} in {@code rust/src/lib.rs}) parameterized with:
  *
  * <ul>
- *   <li>a <b>max level</b> ({@link #abiLevel()}) derived from this class's Log4j2 logger, so the
- *       core filters disabled events on its side — critically, its {@code #[instrument(level =
+ *   <li>a <b>max level</b> ({@link #abiLevel()}) derived from this class's logger, so the core
+ *       filters disabled events on its side — critically, its {@code #[instrument(level =
  *       "trace")]} spans short-circuit before doing any work when trace is off;
  *   <li>a <b>log callback</b> ({@link #callbackStub()}): an FFM upcall stub the core invokes for
  *       every event that passes the filter.
@@ -39,13 +38,13 @@ import org.apache.logging.log4j.spi.StandardLevel;
  * <p>The callback is invoked synchronously on the same thread that made the downcall into the core,
  * so a native log line naturally inherits that thread's logging context (the {@code
  * restateInvocationId} / {@code restateInvocationTarget} MDC set by the endpoint handler) — a
- * Log4j2 pattern using {@code %X{restateInvocationId}} works unchanged.
+ * layout pattern referencing those MDC keys works unchanged.
  *
  * <p><b>Copy semantics.</b> The core hands the callback a borrowed {@code (ptr, len)} view over a
  * buffer that is valid only for the duration of the call. We therefore eagerly copy the bytes into
- * a JVM-heap {@code String} <b>during the call</b>: an async Log4j2 appender that retains the
- * message then holds a self-contained Java object, never a view over native memory that has since
- * been reused or freed.
+ * a JVM-heap {@code String} <b>during the call</b>: an async appender that retains the message then
+ * holds a self-contained Java object, never a view over native memory that has since been reused or
+ * freed.
  */
 final class NativeLogging {
 
@@ -54,16 +53,16 @@ final class NativeLogging {
   /** Dedicated logger all native (shared-core) events are routed through. */
   private static final String LOGGER_NAME = "dev.restate.sdk.core.StateMachine";
 
-  static final Logger LOG = LogManager.getLogger(LOGGER_NAME);
+  static final Logger LOG = LoggerFactory.getLogger(LOGGER_NAME);
 
   /**
-   * Optional override for the native max level, bypassing the Log4j2-derived value. Accepts {@code
-   * TRACE|DEBUG|INFO|WARN|ERROR}.
+   * Optional override for the native max level, bypassing the value derived from the logger.
+   * Accepts {@code TRACE|DEBUG|INFO|WARN|ERROR}.
    */
   private static final String LEVEL_OVERRIDE_PROPERTY =
       "dev.restate.sdk.core.statemachine.ffm.FfmStateMachine.loglevel";
 
-  // ABI ordinal -> Log4j2 level. Mirrors AbiLogLevel in rust/src/lib.rs.
+  // ABI ordinal -> SLF4J level. Mirrors AbiLogLevel in rust/src/lib.rs.
   private static final Level[] LEVELS = {
     Level.TRACE, Level.DEBUG, Level.INFO, Level.WARN, Level.ERROR
   };
@@ -84,15 +83,17 @@ final class NativeLogging {
       Level l = level >= 0 && level < LEVELS.length ? LEVELS[level] : Level.INFO;
       // The native side already filtered by max level; this guards against per-logger config that
       // is stricter than the max, and avoids the decode when the event would be dropped anyway.
-      if (!LOG.isEnabled(l)) {
+      if (!LOG.isEnabledForLevel(l)) {
         return;
       }
       // Eagerly copy the native bytes into a JVM-heap String *now*, before returning. This is the
       // single copy that makes the whole scheme safe: the native buffer is valid only for this
-      // call, so an async Log4j2 appender that retains the message must be handed a self-contained
-      // Java object, never a view over native memory.
+      // call, so an async appender that retains the message must be handed a self-contained Java
+      // object, never a view over native memory.
       byte[] bytes = msgPtr.reinterpret(msgLen).toArray(ValueLayout.JAVA_BYTE);
-      LOG.log(l, new String(bytes, StandardCharsets.UTF_8));
+      // setMessage (not log(String)) so a `{}` occurring in a native message is never mistaken for
+      // a formatting placeholder.
+      LOG.atLevel(l).setMessage(new String(bytes, StandardCharsets.UTF_8)).log();
     } catch (Throwable ignored) {
       // Swallow: an exception unwinding into the native caller across `extern "C"` is UB.
     }
@@ -122,8 +123,8 @@ final class NativeLogging {
   /**
    * The max native tracing level as an {@code AbiLogLevel} ordinal (0 trace .. 4 error), taken from
    * the {@link #LEVEL_OVERRIDE_PROPERTY} system property when set, otherwise from the effective
-   * Log4j2 level of {@link #LOGGER_NAME}. Passed to native {@code init} so the core does not even
-   * produce events below it.
+   * level of {@link #LOGGER_NAME}. Passed to native {@code init} so the core does not even produce
+   * events below it.
    */
   static int abiLevel() {
     String override = System.getProperty(LEVEL_OVERRIDE_PROPERTY);
@@ -136,23 +137,16 @@ final class NativeLogging {
         default -> 2;
       };
     }
-    return abiLevel(LOG.getLevel());
-  }
-
-  private static int abiLevel(Level level) {
-    if (level == null) {
-      return 2; // INFO
-    }
-    // Log4j2 intLevel decreases with severity (TRACE=600 .. ERROR=200); a logger set to level L
-    // permits L and everything more severe. Map that to the coarser native max level.
-    int i = level.intLevel();
-    if (i >= StandardLevel.TRACE.intLevel()) {
+    // SLF4J exposes no getLevel(), so probe the logger from the most verbose level down: the first
+    // enabled one is the effective threshold. Binding-agnostic, and cheap enough for a one-off call
+    // at state machine init.
+    if (LOG.isTraceEnabled()) {
       return 0;
-    } else if (i >= StandardLevel.DEBUG.intLevel()) {
+    } else if (LOG.isDebugEnabled()) {
       return 1;
-    } else if (i >= StandardLevel.INFO.intLevel()) {
+    } else if (LOG.isInfoEnabled()) {
       return 2;
-    } else if (i >= StandardLevel.WARN.intLevel()) {
+    } else if (LOG.isWarnEnabled()) {
       return 3;
     }
     return 4;

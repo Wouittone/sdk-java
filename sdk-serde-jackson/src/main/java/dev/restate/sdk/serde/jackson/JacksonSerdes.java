@@ -20,10 +20,10 @@ import dev.restate.serde.Serde;
 import dev.restate.serde.jackson.JacksonSerdeFactory;
 import java.io.IOException;
 import java.util.stream.StreamSupport;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @deprecated This will be removed in the next release, please check the individual methods for
@@ -34,7 +34,7 @@ public final class JacksonSerdes {
 
   private JacksonSerdes() {}
 
-  private static final Logger LOG = LogManager.getLogger(JacksonSerdes.class);
+  private static final Logger LOG = LoggerFactory.getLogger(JacksonSerdes.class);
 
   private static final ObjectMapper defaultMapper;
 

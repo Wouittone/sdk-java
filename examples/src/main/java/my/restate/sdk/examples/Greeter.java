@@ -14,13 +14,13 @@ import dev.restate.sdk.annotation.Service;
 import dev.restate.sdk.endpoint.Endpoint;
 import dev.restate.sdk.http.vertx.RestateHttpServer;
 import java.time.Duration;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class Greeter {
 
-  private static final Logger LOG = LogManager.getLogger(Greeter.class);
+  private static final Logger LOG = LoggerFactory.getLogger(Greeter.class);
 
   public record Greeting(String name) {}
 

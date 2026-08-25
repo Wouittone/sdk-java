@@ -24,14 +24,14 @@ import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.ThreadContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 /** Restate Lambda Endpoint. */
 public final class LambdaEndpointRequestHandler {
 
-  private static final Logger LOG = LogManager.getLogger(LambdaEndpointRequestHandler.class);
+  private static final Logger LOG = LoggerFactory.getLogger(LambdaEndpointRequestHandler.class);
 
   private final EndpointRequestHandler endpoint;
 
@@ -109,7 +109,7 @@ public final class LambdaEndpointRequestHandler {
       }
 
       // Clear logging
-      ThreadContext.clearAll();
+      MDC.clear();
 
       final APIGatewayProxyResponseEvent response = new APIGatewayProxyResponseEvent();
       response.setHeaders(

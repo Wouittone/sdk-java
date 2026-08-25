@@ -44,6 +44,18 @@ public interface HandlerContext {
 
   boolean canWritePromises();
 
+  /**
+   * The current invocation status, as exposed in the logging context under {@link
+   * LoggingContext#INVOCATION_STATUS_KEY}, or {@code null} when the implementation does not track
+   * one.
+   *
+   * <p>Unlike the other logging context values this one changes while the handler runs, so callers
+   * must re-read it at every point the handler resumes rather than snapshotting it once.
+   */
+  default @Nullable String loggingInvocationStatus() {
+    return null;
+  }
+
   // ----- IO
   // Note: These are not supposed to be exposed in the user's facing Context API.
 

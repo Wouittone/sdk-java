@@ -16,5 +16,5 @@ dependencies {
 
   implementation(libs.opentelemetry.api)
 
-  implementation(libs.log4j.api)
+  api(libs.slf4j.api)
 }

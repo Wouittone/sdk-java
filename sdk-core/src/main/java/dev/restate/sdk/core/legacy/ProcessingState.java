@@ -25,13 +25,13 @@ import dev.restate.sdk.core.generated.protocol.Protocol;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 final class ProcessingState implements State {
 
-  private static final Logger LOG = LogManager.getLogger(ProcessingState.class);
+  private static final Logger LOG = LoggerFactory.getLogger(ProcessingState.class);
 
   private final AsyncResultsState asyncResultsState;
   private final RunState runState;

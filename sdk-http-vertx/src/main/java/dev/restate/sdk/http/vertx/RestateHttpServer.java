@@ -19,8 +19,8 @@ import io.vertx.core.http.HttpServerOptions;
 import java.util.Optional;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Endpoint builder for a Restate HTTP Endpoint using Vert.x, to serve Restate services.
@@ -41,7 +41,7 @@ import org.apache.logging.log4j.Logger;
  */
 public class RestateHttpServer {
 
-  private static final Logger LOG = LogManager.getLogger(RestateHttpServer.class);
+  private static final Logger LOG = LoggerFactory.getLogger(RestateHttpServer.class);
 
   private static final int DEFAULT_PORT =
       Optional.ofNullable(System.getenv("PORT")).map(Integer::parseInt).orElse(9080);

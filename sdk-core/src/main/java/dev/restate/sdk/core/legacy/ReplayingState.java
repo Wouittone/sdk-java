@@ -21,12 +21,12 @@ import dev.restate.sdk.core.StateMachine.RunResultHandle;
 import dev.restate.sdk.core.generated.protocol.Protocol;
 import java.util.*;
 import java.util.stream.Collectors;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 final class ReplayingState implements State {
 
-  private static final Logger LOG = LogManager.getLogger(ReplayingState.class);
+  private static final Logger LOG = LoggerFactory.getLogger(ReplayingState.class);
 
   /**
    * Comparator for notification IDs in error messages. Orders: completions first (by id), then

@@ -9,9 +9,9 @@
 package dev.restate.sdk.endpoint.definition;
 
 import java.util.*;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("rawtypes")
 public final class ServiceDefinitionFactories {
@@ -20,7 +20,7 @@ public final class ServiceDefinitionFactories {
     private static final ServiceDefinitionFactories INSTANCE = new ServiceDefinitionFactories();
   }
 
-  private static final Logger LOG = LogManager.getLogger(ServiceDefinitionFactories.class);
+  private static final Logger LOG = LoggerFactory.getLogger(ServiceDefinitionFactories.class);
 
   private final List<ServiceDefinitionFactory> factories;
 

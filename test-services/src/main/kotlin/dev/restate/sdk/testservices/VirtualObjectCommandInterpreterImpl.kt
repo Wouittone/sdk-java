@@ -14,13 +14,14 @@ import dev.restate.sdk.kotlin.*
 import dev.restate.sdk.kotlin.get
 import dev.restate.sdk.testservices.contracts.VirtualObjectCommandInterpreter
 import kotlin.time.Duration.Companion.milliseconds
-import org.apache.logging.log4j.LogManager
-import org.apache.logging.log4j.Logger
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 class VirtualObjectCommandInterpreterImpl : VirtualObjectCommandInterpreter {
 
   companion object {
-    private val LOG: Logger = LogManager.getLogger(VirtualObjectCommandInterpreterImpl::class.java)
+    private val LOG: Logger =
+        LoggerFactory.getLogger(VirtualObjectCommandInterpreterImpl::class.java)
   }
 
   override suspend fun interpretCommands(

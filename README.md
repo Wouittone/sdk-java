@@ -20,15 +20,16 @@ This SDK features:
 
 ## Community
 
-* 🤗️ [Join our online community](https://discord.gg/skW3AZ6uGd) for help, sharing feedback and talking to the community.
-* 📖 [Check out our documentation](https://docs.restate.dev) to get quickly started!
-* 📣 [Follow us on Twitter](https://twitter.com/restatedev) for staying up to date.
-* 🙋 [Create a GitHub issue](https://github.com/restatedev/sdk-java/issues) for requesting a new feature or reporting a problem.
-* 🏠 [Visit our GitHub org](https://github.com/restatedev) for exploring other repositories.
+- 🤗️ [Join our online community](https://discord.gg/skW3AZ6uGd) for help, sharing feedback and talking to the community.
+- 📖 [Check out our documentation](https://docs.restate.dev) to get quickly started!
+- 📣 [Follow us on Twitter](https://twitter.com/restatedev) for staying up to date.
+- 🙋 [Create a GitHub issue](https://github.com/restatedev/sdk-java/issues) for requesting a new feature or reporting a problem.
+- 🏠 [Visit our GitHub org](https://github.com/restatedev) for exploring other repositories.
 
 ## Using the SDK
 
 ### Prerequisites
+
 - JDK >= 17 (JDK >= 23 recommended — required for the latest Restate features; see [Native access on JDK 23+](#native-access-on-jdk-23))
 
 ### tl;dr Use project templates
@@ -240,7 +241,36 @@ always used.
 
 #### Logging
 
-The SDK uses log4j2 as logging facade, to configure it add the file `resources/log4j2.properties`:
+The SDK logs through two facades and ships **no** implementation of either, so the backend is
+entirely your choice:
+
+- [SLF4J](https://www.slf4j.org/), for everything the SDK logs and for your own handler code.
+- [reactiverse-contextual-logging](https://github.com/reactiverse/reactiverse-contextual-logging)'s
+  `ContextualData`, used only by the HTTP (Vert.x) deployment, to attach the invocation context to
+  the SDK's own log statements emitted on the event loop.
+
+Both are exposed as `api` dependencies and neither drags a backend onto your classpath. Until you
+add one, SLF4J reports `No SLF4J providers were found` and nothing gets logged.
+
+The SDK adds the following metadata to the logging context, which you can use for filtering:
+
+- `restateInvocationTarget`: invocation target, e.g. `counter.Counter/Add`.
+- `restateInvocationId`: Invocation identifier, to be used in Restate observability tools. See https://docs.restate.dev/operate/invocation#invocation-identifier.
+- `restateInvocationStatus`: Invocation status, can be `WAITING_START`, `REPLAYING`, `PROCESSING`, `CLOSED`.
+
+These are written to the SLF4J MDC, so they work with any binding — including from your own handler
+code, which runs on a separate executor. Note that `restateInvocationStatus` changes while a handler
+runs (`REPLAYING` -> `PROCESSING`); the SDK re-reads it every time your handler resumes from a
+suspension point, so a replay filter stays accurate for the whole invocation.
+
+##### Using Log4j2
+
+```kotlin
+runtimeOnly("org.apache.logging.log4j:log4j-slf4j2-impl:2.24.3")
+runtimeOnly("org.apache.logging.log4j:log4j-core:2.24.3")
+```
+
+Then configure it by adding the file `resources/log4j2.properties`:
 
 ```properties
 # Set to debug or trace if log4j initialization is failing
@@ -271,15 +301,30 @@ rootLogger.level = info
 rootLogger.appenderRef.stdout.ref = consoleLogger
 ```
 
-The SDK injects the following additional metadata to the logging context that can be used for filtering as well:
+On the HTTP (Vert.x) deployment, to get the invocation context onto the SDK's *own* event-loop log
+statements as well, register reactiverse's Log4j2 provider yourself by adding the file
+`resources/META-INF/services/org.apache.logging.log4j.core.util.ContextDataProvider`:
 
-* `restateInvocationTarget`: invocation target, e.g. `counter.Counter/Add`.
-* `restateInvocationId`: Invocation identifier, to be used in Restate observability tools. See https://docs.restate.dev/operate/invocation#invocation-identifier.
-* `restateInvocationStatus`: Invocation status, can be `WAITING_START`, `REPLAYING`, `PROCESSING`, `CLOSED`.
+```
+io.reactiverse.contextual.logging.VertxContextDataProvider
+```
 
-The dependencies `sdk-java-http`, `sdk-java-lambda`, `sdk-kotlin-http` and `sdk-kotlin-lambda` bring in `log4j-core` by default, but you can easily exclude/override that if you need to.
+reactiverse 1.2.x does not self-register it, which is why this file is needed. Your handler's own
+log statements do not depend on it — they get the context from the MDC.
 
 When assembling fat-jars, make sure to enable merging META-INF/services files. For more info, see https://github.com/apache/logging-log4j2/issues/2099.
+
+##### Using Logback
+
+```kotlin
+runtimeOnly("ch.qos.logback:logback-classic:1.5.20")
+```
+
+The `restateInvocation*` keys land in the MDC as usual, so `%X{restateInvocationId}` works in a
+Logback pattern with no extra setup. For the SDK's own Vert.x event-loop log statements, reactiverse
+ships a `LogbackConverter`; see the
+[reactiverse-contextual-logging docs](https://github.com/reactiverse/reactiverse-contextual-logging)
+for how to wire it into `logback.xml`.
 
 ## Versions
 
@@ -288,9 +333,9 @@ This library follows [Semantic Versioning](https://semver.org/).
 The compatibility with Restate is described in the following table:
 
 | Restate Server\sdk-java | 2.2 - 2.3 | 2.4 - 2.8 | 2.9 |
-|-------------------------|-----------|-----------|-----|
-| 1.5 - 1.6               | ✅         | ✅         | ✅   |
-| 1.7                     | ✅         | ✅         | ✅   |
+| ----------------------- | --------- | --------- | --- |
+| 1.5 - 1.6               | ✅        | ✅        | ✅  |
+| 1.7                     | ✅        | ✅        | ✅  |
 
 Some features require a minimum version of both Restate and the SDK:
 

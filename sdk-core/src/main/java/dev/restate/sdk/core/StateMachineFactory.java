@@ -13,9 +13,9 @@ import dev.restate.sdk.core.legacy.ServiceProtocol;
 import dev.restate.sdk.endpoint.HeadersAccessor;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Creates the {@link StateMachine} for the current runtime: the Panama/FFM implementation (calling
@@ -44,7 +44,7 @@ interface StateMachineFactory {
 
   final class Loader {
 
-    private static final Logger LOG = LogManager.getLogger(StateMachineFactory.Loader.class);
+    private static final Logger LOG = LoggerFactory.getLogger(StateMachineFactory.Loader.class);
 
     static final StateMachineFactory LEGACY_FACTORY = LegacyStateMachine::new;
     static final @Nullable StateMachineFactory FFM_FACTORY = resolveFfmFactory();

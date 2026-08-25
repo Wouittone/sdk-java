@@ -14,21 +14,22 @@ import dev.restate.sdk.core.generated.manifest.Service;
 import dev.restate.sdk.endpoint.Endpoint;
 import dev.restate.sdk.endpoint.HeadersAccessor;
 import dev.restate.sdk.endpoint.definition.HandlerDefinition;
+import dev.restate.sdk.endpoint.definition.LoggingContext;
 import dev.restate.sdk.endpoint.definition.ServiceDefinition;
 import io.opentelemetry.context.propagation.TextMapGetter;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.ThreadContext;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 public final class EndpointRequestHandler {
 
-  private static final Logger LOG = LogManager.getLogger(EndpointRequestHandler.class);
+  private static final Logger LOG = LoggerFactory.getLogger(EndpointRequestHandler.class);
   private static final String DISCOVER_PATH = "/discover";
   private static final String HEALTH_PATH = "/health";
   private static final Pattern SLASH = Pattern.compile(Pattern.quote("/"));
@@ -102,11 +103,11 @@ public final class EndpointRequestHandler {
   @FunctionalInterface
   public interface LoggingContextSetter {
 
-    String INVOCATION_ID_KEY = "restateInvocationId";
-    String INVOCATION_TARGET_KEY = "restateInvocationTarget";
-    String INVOCATION_STATUS_KEY = "restateInvocationStatus";
+    String INVOCATION_ID_KEY = LoggingContext.INVOCATION_ID_KEY;
+    String INVOCATION_TARGET_KEY = LoggingContext.INVOCATION_TARGET_KEY;
+    String INVOCATION_STATUS_KEY = LoggingContext.INVOCATION_STATUS_KEY;
 
-    LoggingContextSetter THREAD_LOCAL_INSTANCE = ThreadContext::put;
+    LoggingContextSetter THREAD_LOCAL_INSTANCE = MDC::put;
 
     void set(String key, String value);
   }

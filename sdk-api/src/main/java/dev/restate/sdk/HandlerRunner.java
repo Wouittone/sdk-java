@@ -12,6 +12,7 @@ import dev.restate.common.Slice;
 import dev.restate.common.function.*;
 import dev.restate.sdk.common.TerminalException;
 import dev.restate.sdk.endpoint.definition.HandlerContext;
+import dev.restate.sdk.endpoint.definition.LoggingContext;
 import dev.restate.sdk.interceptor.HandlerInterceptor;
 import dev.restate.sdk.interceptor.RunContextPropagator;
 import dev.restate.sdk.interceptor.RunInterceptor;
@@ -28,9 +29,9 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Adapter class for {@link dev.restate.sdk.endpoint.definition.HandlerRunner} to use the Java API.
@@ -45,7 +46,7 @@ public class HandlerRunner<REQ, RES>
   private final RunInterceptor runInterceptor;
   private final RunContextPropagator runContextPropagator;
 
-  private static final Logger LOG = LogManager.getLogger(HandlerRunner.class);
+  private static final Logger LOG = LoggerFactory.getLogger(HandlerRunner.class);
 
   HandlerRunner(
       ThrowingBiFunction<? extends Context, REQ, RES> runner,
@@ -76,11 +77,13 @@ public class HandlerRunner<REQ, RES>
             executor.execute(
                 () -> {
                   HANDLER_CONTEXT_THREAD_LOCAL.set(handlerContext);
+                  LoggingContext.install(handlerContext);
                   // TODO(tracing-plumbing): deprecate, superseded by sdk-interceptor-opentelemetry
                   try (Scope ignored =
                       handlerContext.request().openTelemetryContext().makeCurrent()) {
                     runnable.run();
                   } finally {
+                    LoggingContext.remove();
                     HANDLER_CONTEXT_THREAD_LOCAL.remove();
                   }
                 });

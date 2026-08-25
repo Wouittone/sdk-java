@@ -16,9 +16,9 @@ import java.util.List;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.stream.Collectors;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class ProxySupport {
 
@@ -26,7 +26,7 @@ public final class ProxySupport {
     private static final ProxySupport INSTANCE = new ProxySupport();
   }
 
-  private static final Logger LOG = LogManager.getLogger(ProxySupport.class);
+  private static final Logger LOG = LoggerFactory.getLogger(ProxySupport.class);
 
   private final List<ProxyFactory> factories;
 

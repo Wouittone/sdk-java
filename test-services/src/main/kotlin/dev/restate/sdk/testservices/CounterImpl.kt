@@ -12,13 +12,13 @@ import dev.restate.sdk.common.StateKey
 import dev.restate.sdk.common.TerminalException
 import dev.restate.sdk.kotlin.*
 import dev.restate.sdk.testservices.contracts.Counter
-import org.apache.logging.log4j.LogManager
-import org.apache.logging.log4j.Logger
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 class CounterImpl : Counter {
 
   companion object {
-    private val logger: Logger = LogManager.getLogger(CounterImpl::class.java)
+    private val logger: Logger = LoggerFactory.getLogger(CounterImpl::class.java)
 
     private val COUNTER_KEY: StateKey<Long> = stateKey<Long>("counter")
   }

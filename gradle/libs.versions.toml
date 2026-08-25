@@ -9,6 +9,7 @@
   jwt = 'com.nimbusds:nimbus-jose-jwt:9.47'
   mutiny = 'io.smallrye.reactive:mutiny:2.7.0'
   reactiverse-contextual-logging = 'io.reactiverse:reactiverse-contextual-logging:1.2.1'
+  slf4j-api = 'org.slf4j:slf4j-api:2.0.16'
   slf4j-nop = 'org.slf4j:slf4j-nop:2.0.16'
   testcontainers = 'org.testcontainers:testcontainers:1.21.4'
   tink = 'com.google.crypto.tink:tink:1.18.0'
@@ -91,16 +92,16 @@
     [libraries.ksp-api.version]
       ref = 'ksp'
 
-  [libraries.log4j-api]
-    module = 'org.apache.logging.log4j:log4j-api'
-
-    [libraries.log4j-api.version]
-      ref = 'log4j'
-
   [libraries.log4j-core]
     module = 'org.apache.logging.log4j:log4j-core'
 
     [libraries.log4j-core.version]
+      ref = 'log4j'
+
+  [libraries.log4j-slf4j2-impl]
+    module = 'org.apache.logging.log4j:log4j-slf4j2-impl'
+
+    [libraries.log4j-slf4j2-impl.version]
       ref = 'log4j'
 
   [libraries.opentelemetry-api]

@@ -13,14 +13,14 @@ import dev.restate.sdk.annotation.Handler;
 import dev.restate.sdk.annotation.Name;
 import dev.restate.sdk.annotation.VirtualObject;
 import dev.restate.sdk.common.StateKey;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @VirtualObject
 @Name("Counter")
 public class Counter {
 
-  private static final Logger LOG = LogManager.getLogger(Counter.class);
+  private static final Logger LOG = LoggerFactory.getLogger(Counter.class);
 
   private static final StateKey<Long> TOTAL = StateKey.of("total", Long.class);
 

@@ -31,7 +31,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
-import org.apache.logging.log4j.ThreadContext;
+import org.slf4j.MDC;
 
 public final class MockBidiStream implements TestDefinitions.TestExecutor {
 
@@ -129,7 +129,7 @@ public final class MockBidiStream implements TestDefinitions.TestExecutor {
           .satisfies(l -> definition.getOutputAssert().accept((List<MessageLite>) l));
 
       // Clean logging
-      ThreadContext.clearAll();
+      MDC.clear();
     } finally {
       // Orderly drain rather than shutdownNow().isEmpty(): runSubscriptionOn dispatches upstream
       // request/cancel signals onto coreExecutor as separate tasks that aren't ordered against the

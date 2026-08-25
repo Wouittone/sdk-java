@@ -15,15 +15,15 @@ import dev.restate.sdk.http.vertx.RestateHttpServer
 import dev.restate.sdk.kotlin.*
 import dev.restate.sdk.kotlin.endpoint.*
 import kotlinx.serialization.Serializable
-import org.apache.logging.log4j.LogManager
-import org.apache.logging.log4j.Logger
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 @VirtualObject
 class CounterKt {
 
   companion object {
     private val TOTAL = stateKey<Long>("total")
-    private val LOG: Logger = LogManager.getLogger(CounterKt::class.java)
+    private val LOG: Logger = LoggerFactory.getLogger(CounterKt::class.java)
   }
 
   @Serializable data class CounterUpdate(var oldValue: Long, val newValue: Long)

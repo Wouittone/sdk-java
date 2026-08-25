@@ -19,14 +19,14 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicReference;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** Handles I/O (Flow.Processor), pre-flight replay buffering, and user code orchestration. */
 final class RequestProcessorImpl implements RequestProcessor {
 
-  private static final Logger LOG = LogManager.getLogger(RequestProcessorImpl.class);
+  private static final Logger LOG = LoggerFactory.getLogger(RequestProcessorImpl.class);
 
   private enum State {
     /** Buffering replay input — waiting for {@code vm.isReadyToExecute()}. */

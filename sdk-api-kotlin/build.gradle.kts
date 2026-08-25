@@ -17,6 +17,6 @@ dependencies {
   implementation(libs.kotlinx.coroutines.core)
   implementation(libs.kotlinx.serialization.core)
   implementation(kotlin("reflect"))
-  implementation(libs.log4j.api)
+  api(libs.slf4j.api)
   implementation(libs.opentelemetry.kotlin)
 }

@@ -12,7 +12,7 @@ dependencies {
 
   implementation(project(":common"))
 
-  implementation(libs.log4j.api)
+  api(libs.slf4j.api)
 
   api(libs.jackson.databind)
   implementation(libs.jackson.jsr310)

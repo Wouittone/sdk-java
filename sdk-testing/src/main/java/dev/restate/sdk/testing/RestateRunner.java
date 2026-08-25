@@ -23,9 +23,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testcontainers.Testcontainers;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
@@ -42,7 +42,7 @@ import org.testcontainers.utility.DockerImageName;
  */
 public class RestateRunner implements AutoCloseable, ExtensionContext.Store.CloseableResource {
 
-  private static final Logger LOG = LogManager.getLogger(RestateRunner.class);
+  private static final Logger LOG = LoggerFactory.getLogger(RestateRunner.class);
 
   private static final String RESTATE_RUNTIME = "runtime";
   public static final int RESTATE_INGRESS_ENDPOINT_PORT = 8080;

@@ -36,6 +36,7 @@ class KotlinAPITests : TestRunner() {
         EagerStateTest(),
         StateTest(),
         InvocationIdTest(),
+        LoggingContextTest(),
         OnlyInputAndOutputTest(),
         PromiseTest(),
         SideEffectTest(),

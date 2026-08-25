@@ -22,8 +22,8 @@ import dev.restate.sdk.http.vertx.RestateHttpServer;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Workflow
 public class LoanWorkflow {
@@ -43,7 +43,7 @@ public class LoanWorkflow {
   public record LoanRequest(
       String customerName, String customerId, String customerBankAccount, BigDecimal amount) {}
 
-  private static final Logger LOG = LogManager.getLogger(LoanWorkflow.class);
+  private static final Logger LOG = LoggerFactory.getLogger(LoanWorkflow.class);
 
   private static final StateKey<Status> STATUS = StateKey.of("status", Status.class);
   private static final StateKey<LoanRequest> LOAN_REQUEST =

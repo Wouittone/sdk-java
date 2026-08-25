@@ -15,7 +15,7 @@ dependencies {
 
   implementation(project(":admin-client"))
   implementation(project(":sdk-http-vertx"))
-  implementation(libs.log4j.api)
+  api(libs.slf4j.api)
   implementation(libs.vertx.core)
 
   testImplementation(project(":sdk-api"))
@@ -23,6 +23,7 @@ dependencies {
   testImplementation(project(":sdk-serde-jackson"))
   testImplementation(libs.assertj)
   testImplementation(libs.junit.jupiter)
-  testImplementation(libs.log4j.core)
+  testRuntimeOnly(libs.log4j.slf4j2.impl)
+  testRuntimeOnly(libs.log4j.core)
   testRuntimeOnly(libs.junit.platform.launcher)
 }

@@ -22,7 +22,9 @@ dependencies {
   implementation(libs.kotlinx.serialization.core)
   implementation(libs.kotlinx.serialization.json)
 
-  implementation(libs.log4j.core)
+  implementation(libs.slf4j.api)
+  runtimeOnly(libs.log4j.slf4j2.impl)
+  runtimeOnly(libs.log4j.core)
   implementation(libs.vertx.core)
 }
 

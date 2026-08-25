@@ -26,14 +26,14 @@ import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.HttpVersion;
 import java.net.URI;
 import java.util.concurrent.Executor;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** Vert.x HttpServer handler adapter for {@link Endpoint}. See {@link #fromEndpoint(Endpoint)}. */
 public class HttpEndpointRequestHandler implements Handler<HttpServerRequest> {
 
-  private static final Logger LOG = LogManager.getLogger(HttpEndpointRequestHandler.class);
+  private static final Logger LOG = LoggerFactory.getLogger(HttpEndpointRequestHandler.class);
 
   private static final AsciiString X_RESTATE_SERVER_KEY = AsciiString.cached("x-restate-server");
   private static final AsciiString X_RESTATE_SERVER_VALUE =

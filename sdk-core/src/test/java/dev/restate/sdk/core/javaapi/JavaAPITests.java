@@ -43,6 +43,7 @@ public class JavaAPITests extends TestRunner {
         new EagerStateTest(),
         new StateTest(),
         new InvocationIdTest(),
+        new LoggingContextTest(),
         new OnlyInputAndOutputTest(),
         new PromiseTest(),
         new SideEffectTest(),

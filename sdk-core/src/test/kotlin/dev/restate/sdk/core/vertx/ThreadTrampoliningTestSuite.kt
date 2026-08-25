@@ -26,14 +26,14 @@ import java.util.stream.Stream
 import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Dispatchers
-import org.apache.logging.log4j.LogManager
+import org.slf4j.LoggerFactory
 
 class ThreadTrampoliningTestSuite : TestDefinitions.TestSuite {
 
   private val nonBlockingCoroutineName = CoroutineName("CheckContextSwitchingTestCoroutine")
 
   companion object {
-    private val LOG = LogManager.getLogger()
+    private val LOG = LoggerFactory.getLogger(ThreadTrampoliningTestSuite::class.java)
   }
 
   private suspend fun checkNonBlockingComponentTrampolineExecutor(ctx: Context) {

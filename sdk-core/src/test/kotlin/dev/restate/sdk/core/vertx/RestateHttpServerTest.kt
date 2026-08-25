@@ -29,11 +29,11 @@ import io.vertx.kotlin.coroutines.coAwait
 import io.vertx.kotlin.coroutines.dispatcher
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.runBlocking
-import org.apache.logging.log4j.LogManager
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.parallel.Isolated
+import org.slf4j.LoggerFactory
 
 @Isolated
 @ExtendWith(VertxExtension::class)
@@ -46,7 +46,7 @@ internal class RestateHttpServerTest {
             .setProtocolVersion(HttpVersion.HTTP_2)
             .setHttp2ClearTextUpgrade(false)
 
-    private val LOG = LogManager.getLogger()
+    private val LOG = LoggerFactory.getLogger(RestateHttpServerTest::class.java)
     private val COUNTER = stateKey<Long>("counter")
 
     const val GREETER_NAME = "Greeter"

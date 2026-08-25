@@ -28,10 +28,10 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Base client. This can be used to build {@link Client} implementations on top with the HTTP client
@@ -581,7 +581,7 @@ public abstract class BaseClient implements Client {
 
   public static final class DefaultSerdeFactory {
 
-    private static final Logger LOG = LogManager.getLogger(DefaultSerdeFactory.class);
+    private static final Logger LOG = LoggerFactory.getLogger(DefaultSerdeFactory.class);
 
     private final SerdeFactory loadedFactory;
 

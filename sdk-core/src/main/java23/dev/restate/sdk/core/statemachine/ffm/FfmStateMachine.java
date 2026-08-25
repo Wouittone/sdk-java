@@ -30,8 +30,8 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.logging.log4j.Logger;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
 
 /**
  * Panama/FFM (JDK 23+) implementation of the canonical {@link StateMachine}, driving the native
@@ -72,7 +72,7 @@ public final class FfmStateMachine implements StateMachine {
     // SymbolLookup.loaderLookup() resolves the vm_* symbols.
     NativeLibraryLoader.ensureLoaded();
     // Install the native tracing subscriber: filter at the host's configured level (so disabled
-    // callsites short-circuit in the core) and forward surviving events to Log4j2 via an upcall.
+    // callsites short-circuit in the core) and forward surviving events to SLF4J via an upcall.
     SharedCoreNative.init(NativeLogging.abiLevel(), NativeLogging.callbackStub());
   }
 

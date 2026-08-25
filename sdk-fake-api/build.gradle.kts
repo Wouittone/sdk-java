@@ -14,6 +14,6 @@ dependencies {
   implementation(project(":common"))
   implementation(project(":sdk-core"))
   implementation(project(":sdk-serde-jackson"))
-  implementation(libs.log4j.api)
+  api(libs.slf4j.api)
   implementation(libs.junit.api)
 }

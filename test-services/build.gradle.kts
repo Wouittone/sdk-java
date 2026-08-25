@@ -13,12 +13,13 @@ dependencies {
 
   implementation(libs.kotlinx.serialization.core)
   implementation(libs.kotlinx.serialization.json)
-  implementation(libs.log4j.core)
+  runtimeOnly(libs.log4j.slf4j2.impl)
+  runtimeOnly(libs.log4j.core)
   implementation(libs.kotlinx.coroutines.core)
 
   // You might be wondering why I'm repeating these dependencies here. Well, don't, it's gradle.
   implementation(project(":sdk-common"))
-  implementation(libs.log4j.api)
+  implementation(libs.slf4j.api)
   implementation(libs.opentelemetry.api)
   implementation(libs.jackson.annotations)
   implementation(libs.jackson.databind)

@@ -18,7 +18,7 @@ dependencies {
   api(project(":common"))
 
   implementation(libs.jackson.core)
-  implementation(libs.log4j.api)
+  api(libs.slf4j.api)
 
   testImplementation(libs.junit.jupiter)
   testImplementation(libs.assertj)

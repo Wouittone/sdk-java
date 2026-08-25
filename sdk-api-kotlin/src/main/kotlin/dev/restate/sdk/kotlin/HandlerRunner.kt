@@ -16,6 +16,7 @@ import dev.restate.sdk.endpoint.definition.HandlerContext
 import dev.restate.sdk.kotlin.HandlerRunner.Options.Companion.DEFAULT
 import dev.restate.sdk.kotlin.interceptor.HandlerInterceptor
 import dev.restate.sdk.kotlin.interceptor.RunInterceptor
+import dev.restate.sdk.kotlin.internal.LoggingContextElement
 import dev.restate.sdk.kotlin.internal.RestateContextElement
 import dev.restate.serde.Serde
 import dev.restate.serde.SerdeFactory
@@ -28,7 +29,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asContextElement
 import kotlinx.coroutines.launch
-import org.apache.logging.log4j.LogManager
+import org.slf4j.LoggerFactory
 
 /** Adapter class for [dev.restate.sdk.endpoint.definition.HandlerRunner] to use the Kotlin API. */
 class HandlerRunner<REQ, RES, CTX : Context>
@@ -43,7 +44,7 @@ internal constructor(
   private val runInterceptor = RunInterceptor.Factory.combine(options.runInterceptorFactories)
 
   companion object {
-    private val LOG = LogManager.getLogger(HandlerRunner::class.java)
+    private val LOG = LoggerFactory.getLogger(HandlerRunner::class.java)
 
     /**
      * Factory method for [dev.restate.sdk.kotlin.HandlerRunner], used by codegen. Please note this
@@ -121,6 +122,7 @@ internal constructor(
         CoroutineScope(
             coroutineContext +
                 RestateContextElement(ctx) +
+                LoggingContextElement(handlerContext) +
                 dev.restate.sdk.endpoint.definition.HandlerRunner.HANDLER_CONTEXT_THREAD_LOCAL
                     .asContextElement(handlerContext) +
                 // TODO(tracing-plumbing): deprecate, superseded by sdk-interceptor-opentelemetry

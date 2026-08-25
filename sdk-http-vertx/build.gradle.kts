@@ -18,8 +18,10 @@ dependencies {
 
   // Observability
   implementation(libs.opentelemetry.api)
-  implementation(libs.log4j.api)
-  implementation(libs.reactiverse.contextual.logging) {
+  api(libs.slf4j.api)
+  // Facade only: log4j-core/logback are `optional` in its POM, so no backend is pulled in here.
+  // Users pick the implementation (see the logging section of the README).
+  api(libs.reactiverse.contextual.logging) {
     // Version of vertx is pinned above
     exclude(group = "io.vertx")
   }

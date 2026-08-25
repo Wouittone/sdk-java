@@ -9,12 +9,12 @@
 package dev.restate.sdk.core.legacy;
 
 import dev.restate.sdk.core.EndpointRequestHandler;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 final class StateHolder {
 
-  Logger LOG = LogManager.getLogger(StateHolder.class);
+  Logger LOG = LoggerFactory.getLogger(StateHolder.class);
 
   private State state;
   private final EndpointRequestHandler.LoggingContextSetter loggingContextSetter;

@@ -15,12 +15,12 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerResponse;
 import java.lang.ref.Reference;
 import java.util.concurrent.Flow;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 class HttpResponseFlowAdapter implements Flow.Subscriber<Slice> {
 
-  private static final Logger LOG = LogManager.getLogger(HttpResponseFlowAdapter.class);
+  private static final Logger LOG = LoggerFactory.getLogger(HttpResponseFlowAdapter.class);
 
   private final HttpServerResponse httpServerResponse;
 
