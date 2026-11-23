@@ -4,6 +4,7 @@
   aws-lambda-events = 'com.amazonaws:aws-lambda-java-events:3.11.5'
   google-findbugs-jsr305 = 'com.google.code.findbugs:jsr305:3.0.2'
   handlebars = 'com.github.jknack:handlebars:4.5.0'
+  jakarta-annotation-api = 'jakarta.annotation:jakarta.annotation-api:2.1.1'
   jetbrains-annotations = 'org.jetbrains:annotations:26.0.2-1'
   jspecify = 'org.jspecify:jspecify:1.0.0'
   jwt = 'com.nimbusds:nimbus-jose-jwt:10.10'

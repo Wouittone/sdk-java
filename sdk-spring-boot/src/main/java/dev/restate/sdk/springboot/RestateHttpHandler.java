@@ -22,12 +22,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Flow;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.ThreadContext;
 import org.jspecify.annotations.Nullable;
 import org.reactivestreams.FlowAdapters;
 import org.reactivestreams.Publisher;
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.buffer.DataBuffer;
@@ -48,7 +49,8 @@ import reactor.core.scheduler.Schedulers;
 /**
  * Spring {@link HttpHandler} serving the Restate {@link Endpoint}, playing the part of {@code
  * HttpEndpointRequestHandler} from {@code sdk-http-vertx}. It bridges Spring's reactive request and
- * response to the SDK core's {@link Flow} processor, so it serves Spring MVC apps (through {@code
+ * response to the SDK core's {@link java.util.concurrent.Flow} processor, so it serves Spring MVC
+ * apps (through {@code
  * ServletHttpHandlerAdapter}) and WebFlux apps alike.
  */
 final class RestateHttpHandler implements HttpHandler {
@@ -224,18 +226,18 @@ final class RestateHttpHandler implements HttpHandler {
     return false;
   }
 
-  /** Delegates to the processor as a {@link Flow.Subscriber} and remembers the subscription. */
-  private static final class InputSubscription implements Flow.Subscriber<Slice> {
+  /** Delegates to the processor as a reactive {@link Subscriber} and remembers the subscription. */
+  private static final class InputSubscription implements Subscriber<Slice> {
 
-    private final Flow.Subscriber<Slice> delegate;
-    private volatile @Nullable Flow.Subscription subscription;
+    private final Subscriber<Slice> delegate;
+    private volatile @Nullable Subscription subscription;
 
     private InputSubscription(RequestProcessor processor) {
       this.delegate = FlowAdapters.toFlowSubscriber(processor);
     }
 
     @Override
-    public void onSubscribe(Flow.Subscription subscription) {
+    public void onSubscribe(Subscription subscription) {
       this.subscription = subscription;
       delegate.onSubscribe(subscription);
     }
@@ -256,7 +258,7 @@ final class RestateHttpHandler implements HttpHandler {
     }
 
     private void cancel() {
-      Flow.Subscription subscription = this.subscription;
+      Subscription subscription = this.subscription;
       if (subscription != null) {
         subscription.cancel();
       }

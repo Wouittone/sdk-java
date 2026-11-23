@@ -14,6 +14,7 @@ dependencies {
   compileOnly(libs.jspecify)
   compileOnly(libs.jetbrains.annotations)
 
+  api(libs.jakarta.annotation.api)
   api(libs.opentelemetry.api)
   api(project(":common"))
 
