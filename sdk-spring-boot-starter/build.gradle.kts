@@ -1,3 +1,5 @@
+import org.gradle.api.tasks.testing.JvmTestSuite
+
 plugins {
   `java-conventions`
   `java-library`
@@ -44,6 +46,25 @@ dependencies {
   testImplementation(libs.micrometer.java11)
   testRuntimeOnly(libs.junit.platform.launcher)
 }
+
+// Spring MVC on Tomcat, end to end (needs Docker for the Restate server).
+testing {
+  suites {
+    register<JvmTestSuite>("tomcatTest") {
+      useJUnitJupiter(libs.versions.junit.get())
+      dependencies {
+        implementation(project())
+        implementation(libs.spring.boot.starter.test)
+        implementation(libs.spring.boot.starter.web)
+        implementation(libs.testcontainers)
+        implementation(project(":sdk-core"))
+        implementation(project(":client"))
+      }
+    }
+  }
+}
+
+tasks.named("check") { dependsOn(testing.suites.named("tomcatTest")) }
 
 tasks.withType<JavaCompile> {
   val disabledClassesCodegen = listOf("dev.restate.sdk.springboot.java.GreeterNewApi")
