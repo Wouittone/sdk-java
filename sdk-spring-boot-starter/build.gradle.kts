@@ -52,6 +52,8 @@ testing {
   suites {
     register<JvmTestSuite>("tomcatTest") {
       useJUnitJupiter(libs.versions.junit.get())
+      // App and service classes shared with the other container suite
+      sources { java.srcDir("src/commonTest/java") }
       dependencies {
         implementation(project())
         implementation(libs.spring.boot.starter.test)
@@ -63,6 +65,8 @@ testing {
     }
     register<JvmTestSuite>("webfluxTest") {
       useJUnitJupiter(libs.versions.junit.get())
+      // App and service classes shared with the other container suite
+      sources { java.srcDir("src/commonTest/java") }
       dependencies {
         implementation(project())
         implementation(libs.spring.boot.starter.test)

@@ -14,6 +14,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.restate.client.Client;
 import dev.restate.sdk.core.generated.manifest.EndpointManifestSchema;
 import dev.restate.sdk.springboot.RestateHttpEndpointBean;
+import dev.restate.sdk.springboot.testapp.Echo;
+import dev.restate.sdk.springboot.testapp.RestateTestApp;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -29,7 +31,7 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.utility.DockerImageName;
 
 @SpringBootTest(
-    classes = TomcatApp.class,
+    classes = RestateTestApp.class,
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     properties = "restate.sdk.http.port=0")
 public class TomcatServerTest {

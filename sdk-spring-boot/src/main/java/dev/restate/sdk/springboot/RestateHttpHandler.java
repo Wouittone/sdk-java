@@ -22,6 +22,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.ThreadContext;
 import org.jspecify.annotations.Nullable;
@@ -41,6 +45,7 @@ import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpRequestDecorator;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.util.ClassUtils;
+import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
@@ -176,9 +181,63 @@ final class RestateHttpHandler implements HttpHandler {
             })
         .doFinally(
             signal -> {
-              inputSubscription.cancel();
+              Subscription subscription = inputSubscription.subscription;
+              if (subscription != null) {
+                subscription.cancel();
+              }
               worker.dispose();
             });
+  }
+
+  /**
+   * A worker supplier running each request's worker on its own virtual thread, for {@code
+   * restate.sdk.http.virtualThreads=true}. Loaded reflectively so the SDK still compiles and runs
+   * on Java 17.
+   */
+  static Supplier<Scheduler.Worker> virtualThreadWorkerSupplier() {
+    ThreadFactory threadFactory = virtualThreadFactory();
+    return () -> {
+      ExecutorService executor = Executors.newSingleThreadExecutor(threadFactory);
+      Scheduler.Worker delegate = Schedulers.fromExecutorService(executor).createWorker();
+      return new Scheduler.Worker() {
+        @Override
+        public Disposable schedule(Runnable task) {
+          return delegate.schedule(task);
+        }
+
+        @Override
+        public Disposable schedule(Runnable task, long delay, TimeUnit unit) {
+          return delegate.schedule(task, delay, unit);
+        }
+
+        @Override
+        public Disposable schedulePeriodically(
+            Runnable task, long initialDelay, long period, TimeUnit unit) {
+          return delegate.schedulePeriodically(task, initialDelay, period, unit);
+        }
+
+        @Override
+        public void dispose() {
+          delegate.dispose();
+          executor.shutdownNow();
+        }
+
+        @Override
+        public boolean isDisposed() {
+          return delegate.isDisposed();
+        }
+      };
+    };
+  }
+
+  private static ThreadFactory virtualThreadFactory() {
+    try {
+      Object builder = Thread.class.getMethod("ofVirtual").invoke(null);
+      return (ThreadFactory) builder.getClass().getMethod("factory").invoke(builder);
+    } catch (ReflectiveOperationException e) {
+      throw new IllegalStateException(
+          "restate.sdk.http.virtualThreads=true requires Java 21+ (virtual threads)", e);
+    }
   }
 
   private static HeadersAccessor headersAccessor(HttpHeaders headers) {
@@ -255,13 +314,6 @@ final class RestateHttpHandler implements HttpHandler {
     @Override
     public void onComplete() {
       delegate.onComplete();
-    }
-
-    private void cancel() {
-      Subscription subscription = this.subscription;
-      if (subscription != null) {
-        subscription.cancel();
-      }
     }
   }
 }

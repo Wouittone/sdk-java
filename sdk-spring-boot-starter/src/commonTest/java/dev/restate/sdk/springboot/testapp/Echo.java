@@ -6,11 +6,18 @@
 // You can find a copy of the license in file LICENSE in the root
 // directory of this repository or package, or at
 // https://github.com/restatedev/sdk-java/blob/main/LICENSE
-package dev.restate.sdk.springboot.webflux;
+package dev.restate.sdk.springboot.testapp;
 
-import dev.restate.sdk.springboot.EnableRestate;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import dev.restate.sdk.annotation.Handler;
+import dev.restate.sdk.annotation.Name;
+import dev.restate.sdk.springboot.RestateService;
 
-@SpringBootApplication
-@EnableRestate
-public class WebfluxApp {}
+@RestateService
+@Name("echo")
+public class Echo {
+
+  @Handler
+  public String echo(String input) {
+    return input;
+  }
+}

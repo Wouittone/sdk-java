@@ -11,7 +11,10 @@ package dev.restate.sdk.springboot;
 import dev.restate.sdk.auth.signing.RestateRequestIdentityVerifier;
 import dev.restate.sdk.endpoint.Endpoint;
 import java.util.Map;
+import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
+import reactor.core.scheduler.Scheduler;
+import reactor.core.scheduler.Schedulers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanFactory;
@@ -37,7 +40,9 @@ public class RestateHttpEndpointBean
 
   private volatile boolean running;
 
-  private final @Nullable RestateHttpHandler handler;
+  private @Nullable RestateHttpHandler handler;
+
+  private volatile @Nullable Scheduler workerScheduler;
 
   private volatile @Nullable WebServer webServer;
 
@@ -48,9 +53,7 @@ public class RestateHttpEndpointBean
   public RestateHttpEndpointBean(
       Endpoint endpoint, RestateHttpServerProperties restateHttpServerProperties) {
     this.restateHttpServerProperties = restateHttpServerProperties;
-    this.handler =
-        new RestateHttpHandler(
-            endpoint, !restateHttpServerProperties.isDisableBidirectionalStreaming());
+    initHandler(endpoint);
   }
 
   @Deprecated
@@ -94,9 +97,25 @@ public class RestateHttpEndpointBean
     }
 
     Endpoint endpoint = builder.build();
+    initHandler(endpoint);
+  }
+
+  private void initHandler(Endpoint endpoint) {
+    RestateHttpServerProperties props = this.restateHttpServerProperties;
+    final Supplier<Scheduler.Worker> workerSupplier;
+    if (props.isVirtualThreads()) {
+      // One virtual thread per request.
+      workerSupplier = RestateHttpHandler.virtualThreadWorkerSupplier();
+    } else if (props.getWorkers() > 0) {
+      Scheduler scheduler = Schedulers.newParallel("restate-http", props.getWorkers());
+      this.workerScheduler = scheduler;
+      workerSupplier = scheduler::createWorker;
+    } else {
+      workerSupplier = Schedulers.parallel()::createWorker;
+    }
     this.handler =
         new RestateHttpHandler(
-            endpoint, !restateHttpServerProperties.isDisableBidirectionalStreaming());
+            endpoint, !props.isDisableBidirectionalStreaming(), workerSupplier);
   }
 
   @Override
@@ -127,11 +146,6 @@ public class RestateHttpEndpointBean
       ConfigurableReactiveWebServerFactory factory = RestateWebServerFactories.create(beanFactory);
       // Port 0 means a random port.
       factory.setPort(this.restateHttpServerProperties.getPort());
-      if (this.restateHttpServerProperties.getEventLoops() > 0) {
-        logger.warn(
-            "restate.sdk.http.eventLoops is deprecated and ignored: the web server owns its"
-                + " threads now");
-      }
       if (!RestateWebServerFactories.servesH2c(factory)) {
         logger.warn(
             "{} does not serve cleartext HTTP/2 (h2c): the Restate endpoint on port {} falls back"
@@ -161,6 +175,11 @@ public class RestateHttpEndpointBean
       if (webServer != null) {
         webServer.stop();
         this.webServer = null;
+      }
+      Scheduler workerScheduler = this.workerScheduler;
+      if (workerScheduler != null) {
+        workerScheduler.dispose();
+        this.workerScheduler = null;
       }
       logger.info("Stopped Restate Spring HTTP server");
     } catch (Exception e) {

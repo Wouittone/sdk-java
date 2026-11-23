@@ -8,6 +8,7 @@
 // https://github.com/restatedev/sdk-java/blob/main/LICENSE
 package dev.restate.sdk.springboot;
 
+import java.util.EnumSet;
 import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.boot.jetty.reactive.JettyReactiveWebServerFactory;
@@ -35,8 +36,6 @@ final class RestateWebServerFactories {
   private static final String JETTY_CONTAINER_CLASS = "org.eclipse.jetty.server.Server";
   private static final String UNDERTOW_CONTAINER_CLASS = "io.undertow.Undertow";
   private static final String NETTY_CONTAINER_CLASS = "reactor.netty.http.server.HttpServer";
-  private static final String JETTY_H2C_CLASS =
-      "org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory";
 
   private static final String TOMCAT_SERVLET_FACTORY =
       "org.springframework.boot.tomcat.servlet.TomcatServletWebServerFactory";
@@ -52,8 +51,76 @@ final class RestateWebServerFactories {
       "org.springframework.boot.undertow.reactive.UndertowReactiveWebServerFactory";
   private static final String NETTY_REACTIVE_FACTORY =
       "org.springframework.boot.reactor.netty.NettyReactiveWebServerFactory";
+  private static final String JETTY_H2C_CLASS =
+      "org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory";
 
   private RestateWebServerFactories() {}
+
+  /**
+   * The web containers the endpoint can be served with, in classpath priority order. Each entry
+   * keeps the container class name, the app factory class names (servlet and reactive) and the
+   * cleartext HTTP/2 support, next to each other.
+   */
+  private enum Container {
+    TOMCAT(TOMCAT_CONTAINER_CLASS, TOMCAT_SERVLET_FACTORY, TOMCAT_REACTIVE_FACTORY, true, null),
+    JETTY(
+        JETTY_CONTAINER_CLASS, JETTY_SERVLET_FACTORY, JETTY_REACTIVE_FACTORY, false,
+        JETTY_H2C_CLASS),
+    UNDERTOW(
+        UNDERTOW_CONTAINER_CLASS, UNDERTOW_SERVLET_FACTORY, UNDERTOW_REACTIVE_FACTORY, false, null),
+    NETTY(NETTY_CONTAINER_CLASS, null, NETTY_REACTIVE_FACTORY, true, null);
+
+    /** Spring Boot version that introduced the reactive factory, for legacy compatibility. */
+    static final String REACTIVE_FACTORY_SINCE_BOOT = "2.0.0";
+
+    final String containerClassName;
+    final @Nullable String servletFactoryClassName;
+    final String reactiveFactoryClassName;
+    final boolean h2cAlways;
+    final @Nullable String h2cClassName;
+
+    Container(
+        String containerClassName,
+        @Nullable String servletFactoryClassName,
+        String reactiveFactoryClassName,
+        boolean h2cAlways,
+        @Nullable String h2cClassName) {
+      this.containerClassName = containerClassName;
+      this.servletFactoryClassName = servletFactoryClassName;
+      this.reactiveFactoryClassName = reactiveFactoryClassName;
+      this.h2cAlways = h2cAlways;
+      this.h2cClassName = h2cClassName;
+    }
+
+    boolean containerPresent(ClassLoader classLoader) {
+      return ClassUtils.isPresent(containerClassName, classLoader);
+    }
+
+    /** Whether this container serves cleartext HTTP/2 (h2c). */
+    boolean servesH2c(ClassLoader classLoader) {
+      return h2cAlways || (h2cClassName != null && ClassUtils.isPresent(h2cClassName, classLoader));
+    }
+
+    ConfigurableReactiveWebServerFactory newReactiveFactory() {
+      return switch (this) {
+        case TOMCAT -> new TomcatReactiveWebServerFactory();
+        case JETTY -> new JettyReactiveWebServerFactory();
+        case UNDERTOW -> new UndertowReactiveWebServerFactory();
+        case NETTY -> new NettyReactiveWebServerFactory();
+      };
+    }
+
+    static @Nullable Container fromFactoryClassName(String factoryClassName) {
+      for (Container container : values()) {
+        if (factoryClassName.equals(container.reactiveFactoryClassName)
+            || (container.servletFactoryClassName != null
+                && factoryClassName.equals(container.servletFactoryClassName))) {
+          return container;
+        }
+      }
+      return null;
+    }
+  }
 
   /**
    * Returns a new factory for the app's container (or the first one on the classpath), with
@@ -69,7 +136,9 @@ final class RestateWebServerFactories {
           "No web server on the classpath to serve the Restate endpoint:"
               + " add spring-boot-starter-reactor-netty");
     }
-    if (servesH2c(factory)) {
+    Container container = Container.fromFactoryClassName(factory.getClass().getName());
+    if (container != null
+        && container.servesH2c(RestateWebServerFactories.class.getClassLoader())) {
       Http2 http2 = new Http2();
       http2.setEnabled(true);
       factory.setHttp2(http2);
@@ -82,16 +151,9 @@ final class RestateWebServerFactories {
    * Jetty only when {@code jetty-http2-server} is present, false for Undertow.
    */
   static boolean servesH2c(ConfigurableReactiveWebServerFactory factory) {
-    String factoryClassName = factory.getClass().getName();
-    if (factoryClassName.equals(TOMCAT_REACTIVE_FACTORY)
-        || factoryClassName.equals(NETTY_REACTIVE_FACTORY)) {
-      return true;
-    }
-    if (factoryClassName.equals(JETTY_REACTIVE_FACTORY)) {
-      return ClassUtils.isPresent(
-          JETTY_H2C_CLASS, RestateWebServerFactories.class.getClassLoader());
-    }
-    return false;
+    Container container = Container.fromFactoryClassName(factory.getClass().getName());
+    return container != null
+        && container.servesH2c(RestateWebServerFactories.class.getClassLoader());
   }
 
   private static @Nullable ConfigurableReactiveWebServerFactory fromAppContainer(
@@ -113,45 +175,42 @@ final class RestateWebServerFactories {
 
   private static @Nullable ConfigurableReactiveWebServerFactory reactiveFactoryFor(
       String factoryClassName, ClassLoader classLoader) {
-    if (factoryClassName.equals(TOMCAT_SERVLET_FACTORY)
-        || factoryClassName.equals(TOMCAT_REACTIVE_FACTORY)) {
-      return ClassUtils.isPresent(TOMCAT_CONTAINER_CLASS, classLoader)
-          ? new TomcatReactiveWebServerFactory()
-          : null;
+    final Container container;
+    switch (factoryClassName) {
+      case TOMCAT_SERVLET_FACTORY:
+      case TOMCAT_REACTIVE_FACTORY:
+        container = Container.TOMCAT;
+        break;
+      case JETTY_SERVLET_FACTORY:
+      case JETTY_REACTIVE_FACTORY:
+        container = Container.JETTY;
+        break;
+      case UNDERTOW_SERVLET_FACTORY:
+      case UNDERTOW_REACTIVE_FACTORY:
+        container = Container.UNDERTOW;
+        break;
+      case NETTY_REACTIVE_FACTORY:
+        container = Container.NETTY;
+        break;
+      default:
+        return null;
     }
-    if (factoryClassName.equals(JETTY_SERVLET_FACTORY)
-        || factoryClassName.equals(JETTY_REACTIVE_FACTORY)) {
-      return ClassUtils.isPresent(JETTY_CONTAINER_CLASS, classLoader)
-          ? new JettyReactiveWebServerFactory()
-          : null;
-    }
-    if (factoryClassName.equals(UNDERTOW_SERVLET_FACTORY)
-        || factoryClassName.equals(UNDERTOW_REACTIVE_FACTORY)) {
-      return ClassUtils.isPresent(UNDERTOW_CONTAINER_CLASS, classLoader)
-          ? new UndertowReactiveWebServerFactory()
-          : null;
-    }
-    if (factoryClassName.equals(NETTY_REACTIVE_FACTORY)) {
-      return ClassUtils.isPresent(NETTY_CONTAINER_CLASS, classLoader)
-          ? new NettyReactiveWebServerFactory()
-          : null;
-    }
-    return null;
+    return container.containerPresent(classLoader) ? container.newReactiveFactory() : null;
   }
 
   private static @Nullable ConfigurableReactiveWebServerFactory fromClasspath() {
     ClassLoader classLoader = RestateWebServerFactories.class.getClassLoader();
-    if (ClassUtils.isPresent(TOMCAT_CONTAINER_CLASS, classLoader)) {
-      return new TomcatReactiveWebServerFactory();
+    // Load the available containers once, then pick the first one in priority order.
+    EnumSet<Container> present = EnumSet.noneOf(Container.class);
+    for (Container container : Container.values()) {
+      if (container.containerPresent(classLoader)) {
+        present.add(container);
+      }
     }
-    if (ClassUtils.isPresent(JETTY_CONTAINER_CLASS, classLoader)) {
-      return new JettyReactiveWebServerFactory();
-    }
-    if (ClassUtils.isPresent(UNDERTOW_CONTAINER_CLASS, classLoader)) {
-      return new UndertowReactiveWebServerFactory();
-    }
-    if (ClassUtils.isPresent(NETTY_CONTAINER_CLASS, classLoader)) {
-      return new NettyReactiveWebServerFactory();
+    for (Container container : Container.values()) {
+      if (present.contains(container)) {
+        return container.newReactiveFactory();
+      }
     }
     return null;
   }
