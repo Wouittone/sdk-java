@@ -292,7 +292,7 @@ final class RestateHttpHandler implements HttpHandler {
     private volatile @Nullable Subscription subscription;
 
     private InputSubscription(RequestProcessor processor) {
-      this.delegate = FlowAdapters.toFlowSubscriber(processor);
+      this.delegate = FlowAdapters.toSubscriber(processor);
     }
 
     @Override
