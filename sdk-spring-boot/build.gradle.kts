@@ -50,6 +50,9 @@ dependencies {
   testImplementation(libs.spring.boot.starter)
   testImplementation(libs.spring.boot.starter.json)
   testImplementation(libs.spring.boot.starter.test)
+  // Pin JUnit explicitly: the Spring Boot BOM manages an older junit-jupiter than the
+  // junit-platform-launcher pinned below, which breaks the Gradle test executor.
+  testImplementation(libs.junit.jupiter)
   testImplementation(project(":sdk-api"))
   testImplementation(libs.reactor.netty.http)
   testImplementation(libs.tomcat.embed.core)
