@@ -1,4 +1,4 @@
-import org.gradle.api.tasks.testing.JvmTestSuite
+import org.gradle.api.plugins.jvm.JvmTestSuite
 
 plugins {
   `java-conventions`
