@@ -24,6 +24,7 @@ dependencies {
   // SDK deps
   implementation(project(":sdk-common"), excludeJackson)
   implementation(project(":client"), excludeJackson)
+  implementation(project(":sdk-core"), excludeJackson)
   implementation(project(":sdk-http-vertx"), excludeJackson)
   implementation(project(":sdk-request-identity"), excludeJackson)
   implementation(libs.vertx.core) {
@@ -35,6 +36,14 @@ dependencies {
 
   implementation(libs.spring.boot)
   implementation(libs.spring.boot.starter.logging)
+  // Versions of spring-web/reactor-core come from the Spring Boot BOM imported below.
+  implementation(libs.spring.web)
+  implementation(libs.reactor.core)
+
+  // Optional web containers: only referenced behind ClassUtils.isPresent checks, so a missing
+  // container never throws NoClassDefFoundError. tomcat-embed-core also provides the servlet API.
+  compileOnly(libs.tomcat.embed.core)
+  compileOnly(libs.reactor.netty.http)
 
   // Optional dependencies to load tracing-related stuff.
   compileOnly(project(":sdk-api"))
@@ -48,7 +57,17 @@ dependencies {
   testImplementation(libs.spring.boot.starter)
   testImplementation(libs.spring.boot.starter.json)
   testImplementation(libs.spring.boot.starter.test)
+  testImplementation(project(":sdk-api"))
+  testImplementation(libs.reactor.netty.http)
+  testImplementation(libs.tomcat.embed.core)
   testRuntimeOnly(libs.junit.platform.launcher)
+}
+
+// Supplies the versions of the catalog entries that have none (spring-web, reactor-core, ...).
+dependencyManagement {
+  imports {
+    mavenBom("org.springframework.boot:spring-boot-dependencies:${libs.versions.spring.boot.get()}")
+  }
 }
 
 tasks.withType<JavaCompile> { options.compilerArgs.add("-parameters") }
