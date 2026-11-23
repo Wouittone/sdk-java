@@ -1,0 +1,11 @@
+{
+  "image": "mcr.microsoft.com/devcontainers/universal:2",
+  "features": {
+    "ghcr.io/devcontainers/templates/java": {
+      "version": "5.0.0",
+      "imageVariant": "21-trixie",
+      "installMaven": false,
+      "installGradle": true
+    }
+  }
+}
