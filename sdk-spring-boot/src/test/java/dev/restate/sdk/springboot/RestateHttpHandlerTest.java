@@ -68,8 +68,9 @@ class RestateHttpHandlerTest {
     assertThat(response.getStatusCode().value()).isEqualTo(200);
     assertThat(response.getHeaders().getFirst("x-restate-server"))
         .isEqualTo(Version.X_RESTATE_SERVER);
-    var manifest =
-        new ObjectMapper().readValue(response.getBodyAsString(), EndpointManifestSchema.class);
+    String body = response.getBodyAsString().block();
+    assertThat(body).isNotNull();
+    var manifest = new ObjectMapper().readValue(body, EndpointManifestSchema.class);
     assertThat(manifest.getProtocolMode())
         .isEqualTo(EndpointManifestSchema.ProtocolMode.REQUEST_RESPONSE);
     assertThat(manifest.getServices())
@@ -103,7 +104,7 @@ class RestateHttpHandlerTest {
             (NettyDataBuffer)
                 bufferFactory.wrap(Unpooled.wrappedBuffer("ld".getBytes(StandardCharsets.UTF_8))));
     MockServerHttpRequest request =
-        MockServerHttpRequest.post("/invoke/greeter/greet").body(Flux.fromIterable(chunks)).build();
+        MockServerHttpRequest.post("/invoke/greeter/greet").body(Flux.fromIterable(chunks));
     MockServerHttpResponse response = new MockServerHttpResponse();
 
     handler.handle(request, response).block();
@@ -146,7 +147,7 @@ class RestateHttpHandlerTest {
         };
     RestateHttpHandler handler = new RestateHttpHandler(endpoint, true, () -> recordingWorker);
     MockServerHttpRequest request =
-        MockServerHttpRequest.post("/invoke/greeter/greet").body(Flux.never()).build();
+        MockServerHttpRequest.post("/invoke/greeter/greet").body(Flux.never());
     MockServerHttpResponse response = new MockServerHttpResponse();
 
     Disposable subscription = handler.handle(request, response).subscribe();
@@ -168,8 +169,7 @@ class RestateHttpHandlerTest {
               .body(
                   Flux.just(
                       bufferFactory.wrap(
-                          Unpooled.wrappedBuffer("World".getBytes(StandardCharsets.UTF_8)))))
-              .build();
+                          Unpooled.wrappedBuffer("World".getBytes(StandardCharsets.UTF_8)))));
 
       handler.handle(request, new MockServerHttpResponse()).block();
 
