@@ -25,14 +25,7 @@ dependencies {
   implementation(project(":sdk-common"), excludeJackson)
   implementation(project(":client"), excludeJackson)
   implementation(project(":sdk-core"), excludeJackson)
-  implementation(project(":sdk-http-vertx"), excludeJackson)
   implementation(project(":sdk-request-identity"), excludeJackson)
-  implementation(libs.vertx.core) {
-    // Let spring bring jackson in
-    exclude(group = "com.fasterxml.jackson")
-    exclude(group = "com.fasterxml.jackson.core")
-    exclude(group = "com.fasterxml.jackson.datatype")
-  }
 
   implementation(libs.spring.boot)
   implementation(libs.spring.boot.starter.logging)

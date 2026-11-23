@@ -9,6 +9,7 @@
 package dev.restate.sdk.springboot;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.DeprecatedConfigurationProperty;
 import org.springframework.boot.context.properties.bind.ConstructorBinding;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 import org.springframework.boot.context.properties.bind.Name;
@@ -39,7 +40,12 @@ public class RestateHttpServerProperties {
   /**
    * Number of event loops to run, spreading incoming connections across that many CPU cores. When
    * {@code 0}, the default {@code 2 * availableProcessors} is used.
+   *
+   * @deprecated The web server owns its threads now; this value is ignored.
    */
+  @Deprecated
+  @DeprecatedConfigurationProperty(
+      reason = "The web server owns its threads; this value is ignored")
   public int getEventLoops() {
     return eventLoops;
   }

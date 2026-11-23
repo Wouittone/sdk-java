@@ -23,6 +23,8 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.SpringApplicationBuilder;
+import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest(
@@ -65,11 +67,44 @@ public class RestateHttpEndpointBeanTest {
     var endpointManifest =
         new ObjectMapper().readValue(response.body(), EndpointManifestSchema.class);
 
+    // Served over cleartext HTTP/2, so bidirectional streaming is on.
+    assertThat(endpointManifest.getProtocolMode())
+        .isEqualTo(EndpointManifestSchema.ProtocolMode.BIDI_STREAM);
     assertThat(endpointManifest.getServices())
         .extracting(
             dev.restate.sdk.core.generated.manifest.Service::getName,
             dev.restate.sdk.core.generated.manifest.Service::getDocumentation,
             dev.restate.sdk.core.generated.manifest.Service::getJournalRetention)
         .containsOnly(tuple("greeter", "blabla", Duration.ofDays(2).toMillis()));
+  }
+
+  @Test
+  public void http11FallsBackToRequestResponse() throws IOException, InterruptedException {
+    var client = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).build();
+    var response =
+        client.send(
+            HttpRequest.newBuilder()
+                .GET()
+                .version(HttpClient.Version.HTTP_1_1)
+                .uri(
+                    URI.create(
+                        "http://localhost:" + restateHttpEndpointBean.actualPort() + "/discover"))
+                .header("Accept", "application/vnd.restate.endpointmanifest.v4+json")
+                .build(),
+            HttpResponse.BodyHandlers.ofString());
+    assertThat(response.version()).isEqualTo(HttpClient.Version.HTTP_1_1);
+    assertThat(response.statusCode()).isEqualTo(200);
+
+    var endpointManifest =
+        new ObjectMapper().readValue(response.body(), EndpointManifestSchema.class);
+    assertThat(endpointManifest.getProtocolMode())
+        .isEqualTo(EndpointManifestSchema.ProtocolMode.REQUEST_RESPONSE);
+  }
+
+  @Test
+  public void plainAppStaysNonWeb() {
+    // spring-boot-starter-reactor-netty must not turn a plain app into a web app.
+    assertThat(new SpringApplicationBuilder(Greeter.class).build().getWebApplicationType())
+        .isEqualTo(WebApplicationType.NONE);
   }
 }

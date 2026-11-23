@@ -28,6 +28,8 @@ dependencies {
 
   // Spring boot starter brought in here for convenience
   api(libs.spring.boot.starter)
+  // So that an app with no web stack still has a server for the Restate endpoint port
+  api(libs.spring.boot.starter.reactor.netty)
 
   // Testing
   testImplementation(libs.spring.boot.starter.test)
