@@ -1,11 +1,18 @@
 {
   "image": "mcr.microsoft.com/devcontainers/universal:2",
   "features": {
-    "ghcr.io/devcontainers/templates/java": {
-      "version": "5.0.0",
-      "imageVariant": "21-trixie",
+    "ghcr.io/devcontainers/features/java:1": {
+      "version": "latest",
       "installMaven": false,
       "installGradle": true
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "mistralai.mistral-vibe-code",
+        "vscjava.vscode-gradle"
+      ]
     }
   }
 }
