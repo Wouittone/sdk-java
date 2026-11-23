@@ -61,10 +61,22 @@ testing {
         implementation(project(":client"))
       }
     }
+    register<JvmTestSuite>("webfluxTest") {
+      useJUnitJupiter(libs.versions.junit.get())
+      dependencies {
+        implementation(project())
+        implementation(libs.spring.boot.starter.test)
+        implementation(libs.spring.boot.starter.webflux)
+        implementation(project(":sdk-core"))
+      }
+    }
   }
 }
 
-tasks.named("check") { dependsOn(testing.suites.named("tomcatTest")) }
+tasks.named("check") {
+  dependsOn(testing.suites.named("tomcatTest"))
+  dependsOn(testing.suites.named("webfluxTest"))
+}
 
 tasks.withType<JavaCompile> {
   val disabledClassesCodegen = listOf("dev.restate.sdk.springboot.java.GreeterNewApi")
