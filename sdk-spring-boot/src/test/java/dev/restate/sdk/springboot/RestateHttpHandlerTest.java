@@ -108,8 +108,7 @@ class RestateHttpHandlerTest {
 
     handler.handle(request, response).block();
 
-    assertThat(chunks)
-        .allSatisfy(b -> assertThat(b.getNativeBuffer().refCnt()).isZero());
+    assertThat(chunks).allSatisfy(b -> assertThat(b.getNativeBuffer().refCnt()).isZero());
   }
 
   @Test
@@ -180,8 +179,7 @@ class RestateHttpHandlerTest {
       worker.schedule(
           () -> {
             seen.set(
-                ThreadContext.get(
-                    EndpointRequestHandler.LoggingContextSetter.INVOCATION_ID_KEY));
+                ThreadContext.get(EndpointRequestHandler.LoggingContextSetter.INVOCATION_ID_KEY));
             latch.countDown();
           });
       assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue();

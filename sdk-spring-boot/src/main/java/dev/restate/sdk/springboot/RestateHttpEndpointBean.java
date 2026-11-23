@@ -13,8 +13,6 @@ import dev.restate.sdk.endpoint.Endpoint;
 import java.util.Map;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
-import reactor.core.scheduler.Scheduler;
-import reactor.core.scheduler.Schedulers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanFactory;
@@ -26,13 +24,14 @@ import org.springframework.boot.web.reactive.server.ConfigurableReactiveWebServe
 import org.springframework.boot.web.server.WebServer;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.SmartLifecycle;
+import reactor.core.scheduler.Scheduler;
+import reactor.core.scheduler.Schedulers;
 
 /**
  * Restate HTTP Endpoint serving {@link Endpoint} with the app's own web server (Tomcat, Jetty,
  * Undertow or Reactor Netty) through a Spring Boot factory.
  */
-public class RestateHttpEndpointBean
-    implements InitializingBean, SmartLifecycle, BeanFactoryAware {
+public class RestateHttpEndpointBean implements InitializingBean, SmartLifecycle, BeanFactoryAware {
 
   private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -114,8 +113,7 @@ public class RestateHttpEndpointBean
       workerSupplier = Schedulers.parallel()::createWorker;
     }
     this.handler =
-        new RestateHttpHandler(
-            endpoint, !props.isDisableBidirectionalStreaming(), workerSupplier);
+        new RestateHttpHandler(endpoint, !props.isDisableBidirectionalStreaming(), workerSupplier);
   }
 
   @Override

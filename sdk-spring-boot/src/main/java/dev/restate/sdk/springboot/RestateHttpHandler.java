@@ -55,8 +55,7 @@ import reactor.core.scheduler.Schedulers;
  * Spring {@link HttpHandler} serving the Restate {@link Endpoint}, playing the part of {@code
  * HttpEndpointRequestHandler} from {@code sdk-http-vertx}. It bridges Spring's reactive request and
  * response to the SDK core's {@link java.util.concurrent.Flow} processor, so it serves Spring MVC
- * apps (through {@code
- * ServletHttpHandlerAdapter}) and WebFlux apps alike.
+ * apps (through {@code ServletHttpHandlerAdapter}) and WebFlux apps alike.
  */
 final class RestateHttpHandler implements HttpHandler {
 
@@ -127,8 +126,7 @@ final class RestateHttpHandler implements HttpHandler {
       String message = e.getMessage() == null ? "" : e.getMessage();
       return response
           .writeWith(
-              Mono.just(
-                  response.bufferFactory().wrap(message.getBytes(StandardCharsets.UTF_8))))
+              Mono.just(response.bufferFactory().wrap(message.getBytes(StandardCharsets.UTF_8))))
           .doFinally(signal -> worker.dispose());
     }
 

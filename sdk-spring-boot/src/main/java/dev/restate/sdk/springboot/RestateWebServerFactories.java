@@ -64,7 +64,10 @@ final class RestateWebServerFactories {
   private enum Container {
     TOMCAT(TOMCAT_CONTAINER_CLASS, TOMCAT_SERVLET_FACTORY, TOMCAT_REACTIVE_FACTORY, true, null),
     JETTY(
-        JETTY_CONTAINER_CLASS, JETTY_SERVLET_FACTORY, JETTY_REACTIVE_FACTORY, false,
+        JETTY_CONTAINER_CLASS,
+        JETTY_SERVLET_FACTORY,
+        JETTY_REACTIVE_FACTORY,
+        false,
         JETTY_H2C_CLASS),
     UNDERTOW(
         UNDERTOW_CONTAINER_CLASS, UNDERTOW_SERVLET_FACTORY, UNDERTOW_REACTIVE_FACTORY, false, null),
@@ -147,8 +150,8 @@ final class RestateWebServerFactories {
   }
 
   /**
-   * Whether the factory serves cleartext HTTP/2 (h2c): true for Tomcat and Reactor Netty, for
-   * Jetty only when {@code jetty-http2-server} is present, false for Undertow.
+   * Whether the factory serves cleartext HTTP/2 (h2c): true for Tomcat and Reactor Netty, for Jetty
+   * only when {@code jetty-http2-server} is present, false for Undertow.
    */
   static boolean servesH2c(ConfigurableReactiveWebServerFactory factory) {
     Container container = Container.fromFactoryClassName(factory.getClass().getName());

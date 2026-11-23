@@ -30,11 +30,7 @@ import org.springframework.boot.test.context.SpringBootTest;
       Greeter.class,
       ServicesConfiguration.class
     },
-    properties = {
-      "restate.sdk.http.port=0",
-      "restate.sdk.http.workers=2",
-      "greetingPrefix=Hello "
-    })
+    properties = {"restate.sdk.http.port=0", "restate.sdk.http.workers=2", "greetingPrefix=Hello "})
 public class RestateHttpEndpointBeanWorkersTest {
 
   @Autowired private RestateHttpEndpointBean restateHttpEndpointBean;

@@ -40,8 +40,7 @@ public class TomcatServerTest {
 
   @LocalServerPort private int serverPort;
 
-  private HttpResponse<String> discover(HttpClient.Version version)
-      throws Exception {
+  private HttpResponse<String> discover(HttpClient.Version version) throws Exception {
     var client = HttpClient.newBuilder().version(version).build();
     return client.send(
         HttpRequest.newBuilder()
