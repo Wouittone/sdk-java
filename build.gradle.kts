@@ -18,16 +18,19 @@ allprojects {
   group = "dev.restate"
   version = restateVersion
 
-  // Spotless provisions its formatters in ephemeral "spotless*" configurations. Constraints from
-  // BOMs (e.g. the Spring Boot BOM via the dependency-management plugin) leak into them and can
-  // pin kotlin-compiler-embeddable below 2.0.20, which breaks ktfmt >= 0.55's Parser
-  // (https://github.com/diffplug/spotless/issues/2646). Force the Kotlin version ktfmt ships with.
-  configurations.configureEach {
-    if (name.startsWith("spotless")) {
-      resolutionStrategy.eachDependency {
-        if (requested.group == "org.jetbrains.kotlin") {
-          useVersion("2.2.0")
-          because("ktfmt >= 0.55 requires Kotlin >= 2.0.20")
+  // Spotless provisions its formatters in ephemeral "spotless*" configurations. Resolution rules
+  // from dependency-management plugins/BOMs (e.g. the Spring Boot BOM) leak into them and can pin
+  // kotlin-compiler-embeddable below 2.0.20, which breaks ktfmt >= 0.55's Parser
+  // (https://github.com/diffplug/spotless/issues/2646). Register this rule last (afterEvaluate)
+  // so it wins and forces the Kotlin version ktfmt ships with.
+  afterEvaluate {
+    configurations.configureEach {
+      if (name.startsWith("spotless")) {
+        resolutionStrategy.eachDependency {
+          if (requested.group == "org.jetbrains.kotlin") {
+            useVersion("2.2.0")
+            because("ktfmt >= 0.55 requires Kotlin >= 2.0.20")
+          }
         }
       }
     }
