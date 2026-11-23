@@ -11,10 +11,10 @@ package dev.restate.sdk.springboot;
 import java.util.EnumSet;
 import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.ListableBeanFactory;
-import org.springframework.boot.jetty.reactive.JettyReactiveWebServerFactory;
-import org.springframework.boot.reactor.netty.NettyReactiveWebServerFactory;
-import org.springframework.boot.tomcat.reactive.TomcatReactiveWebServerFactory;
-import org.springframework.boot.undertow.reactive.UndertowReactiveWebServerFactory;
+import org.springframework.boot.web.embedded.jetty.JettyReactiveWebServerFactory;
+import org.springframework.boot.web.embedded.netty.NettyReactiveWebServerFactory;
+import org.springframework.boot.web.embedded.tomcat.TomcatReactiveWebServerFactory;
+import org.springframework.boot.web.embedded.undertow.UndertowReactiveWebServerFactory;
 import org.springframework.boot.web.reactive.server.ConfigurableReactiveWebServerFactory;
 import org.springframework.boot.web.server.Http2;
 import org.springframework.boot.web.server.WebServerFactory;
@@ -38,19 +38,19 @@ final class RestateWebServerFactories {
   private static final String NETTY_CONTAINER_CLASS = "reactor.netty.http.server.HttpServer";
 
   private static final String TOMCAT_SERVLET_FACTORY =
-      "org.springframework.boot.tomcat.servlet.TomcatServletWebServerFactory";
+      "org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory";
   private static final String TOMCAT_REACTIVE_FACTORY =
-      "org.springframework.boot.tomcat.reactive.TomcatReactiveWebServerFactory";
+      "org.springframework.boot.web.embedded.tomcat.TomcatReactiveWebServerFactory";
   private static final String JETTY_SERVLET_FACTORY =
-      "org.springframework.boot.jetty.servlet.JettyServletWebServerFactory";
+      "org.springframework.boot.web.embedded.jetty.JettyServletWebServerFactory";
   private static final String JETTY_REACTIVE_FACTORY =
-      "org.springframework.boot.jetty.reactive.JettyReactiveWebServerFactory";
+      "org.springframework.boot.web.embedded.jetty.JettyReactiveWebServerFactory";
   private static final String UNDERTOW_SERVLET_FACTORY =
-      "org.springframework.boot.undertow.servlet.UndertowServletWebServerFactory";
+      "org.springframework.boot.web.embedded.undertow.UndertowServletWebServerFactory";
   private static final String UNDERTOW_REACTIVE_FACTORY =
-      "org.springframework.boot.undertow.reactive.UndertowReactiveWebServerFactory";
+      "org.springframework.boot.web.embedded.undertow.UndertowReactiveWebServerFactory";
   private static final String NETTY_REACTIVE_FACTORY =
-      "org.springframework.boot.reactor.netty.NettyReactiveWebServerFactory";
+      "org.springframework.boot.web.embedded.netty.NettyReactiveWebServerFactory";
   private static final String JETTY_H2C_CLASS =
       "org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory";
 
