@@ -105,7 +105,9 @@ public class TomcatServerTest {
                       .header("Content-Type", "application/json")
                       .build(),
                   HttpResponse.BodyHandlers.ofString());
-      assertThat(registerResponse.statusCode()).isBetween(200, 299);
+      assertThat(registerResponse.statusCode())
+          .as("register response: %s", registerResponse.body())
+          .isBetween(200, 299);
 
       // Restate dials http:// deployments over HTTP/2 prior knowledge, so the invocation goes
       // through Tomcat's h2c path and the servlet adapter in bidirectional streaming mode.
