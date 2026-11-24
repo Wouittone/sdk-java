@@ -7,6 +7,8 @@ on:
 
 jobs:
   CLAAssistant:
+    # secrets of the restatedev org (GitHub App credentials) are unavailable in forks
+    if: github.repository_owner == 'restatedev'
     # the reusable workflow can't exceed the caller's permissions, so grant what it needs explicitly
     permissions:
       actions: write
