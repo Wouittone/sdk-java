@@ -241,6 +241,38 @@
     [libraries.spring-boot-starter-test.version]
       ref = 'spring-boot'
 
+  [libraries.spring-boot-starter-reactor-netty]
+    module = 'org.springframework.boot:spring-boot-starter-reactor-netty'
+
+    [libraries.spring-boot-starter-reactor-netty.version]
+      ref = 'spring-boot'
+
+  [libraries.spring-boot-starter-web]
+    module = 'org.springframework.boot:spring-boot-starter-web'
+
+    [libraries.spring-boot-starter-web.version]
+      ref = 'spring-boot'
+
+  [libraries.spring-boot-starter-webflux]
+    module = 'org.springframework.boot:spring-boot-starter-webflux'
+
+    [libraries.spring-boot-starter-webflux.version]
+      ref = 'spring-boot'
+
+  # No version on purpose: resolved from the Spring Boot BOM imported through the
+  # dependency-management plugin in the modules that use them.
+  [libraries.spring-web]
+    module = 'org.springframework:spring-web'
+
+  [libraries.reactor-core]
+    module = 'io.projectreactor:reactor-core'
+
+  [libraries.reactor-netty-http]
+    module = 'io.projectreactor.netty:reactor-netty-http'
+
+  [libraries.tomcat-embed-core]
+    module = 'org.apache.tomcat.embed:tomcat-embed-core'
+
   [libraries.spring-boot-configuration-processor]
   module = 'org.springframework.boot:spring-boot-configuration-processor'
 

@@ -22,7 +22,9 @@ dependencies {
   api(project(":sdk-spring-boot"))
   api(project(":sdk-interceptor-micrometer"))
 
-  // Spring boot starter for kotlin dependencies brought in here for convenience
+  // Spring boot starter for kotlin dependencies brought in here for convenience. The web server
+  // implementation is left to the application: an app without any web provider fails at startup
+  // when the Restate endpoint looks for a container.
   api(libs.spring.boot.starter)
   implementation("org.jetbrains.kotlin:kotlin-reflect")
 
@@ -31,6 +33,11 @@ dependencies {
   testImplementation(project(":sdk-testing"))
   testImplementation(libs.kotlinx.coroutines.test)
   testImplementation(libs.spring.boot.starter.test)
+  // Web provider for the endpoint bean tests.
+  testImplementation(libs.spring.boot.starter.reactor.netty)
+  // Pin JUnit explicitly: the Spring Boot BOM manages an older junit-jupiter than the
+  // junit-platform-launcher pinned below, which breaks the Gradle test executor.
+  testImplementation(libs.junit.jupiter)
   testImplementation(project(":sdk-core"))
   testImplementation(libs.jackson.annotations)
   testImplementation(libs.jackson.databind)

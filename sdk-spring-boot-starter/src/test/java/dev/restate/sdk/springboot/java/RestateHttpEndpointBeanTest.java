@@ -16,14 +16,16 @@ import dev.restate.sdk.springboot.RestateEndpointConfiguration;
 import dev.restate.sdk.springboot.RestateHttpConfiguration;
 import dev.restate.sdk.springboot.RestateHttpEndpointBean;
 import java.io.IOException;
-import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.WebApplicationType;
+import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
+import org.springframework.web.client.RestClient;
 
 @SpringBootTest(
     classes = {
@@ -41,35 +43,55 @@ public class RestateHttpEndpointBeanTest {
 
   @Autowired private RestateHttpEndpointBean restateHttpEndpointBean;
 
+  private static RestClient restClient(HttpClient.Version version) {
+    return RestClient.builder()
+        .requestFactory(
+            new JdkClientHttpRequestFactory(HttpClient.newBuilder().version(version).build()))
+        .build();
+  }
+
+  private EndpointManifestSchema discover(RestClient client) throws IOException {
+    var body =
+        client
+            .get()
+            .uri("http://localhost:{port}/discover", restateHttpEndpointBean.actualPort())
+            .header(HttpHeaders.ACCEPT, "application/vnd.restate.endpointmanifest.v4+json")
+            .retrieve()
+            .body(String.class);
+    return new ObjectMapper().readValue(body, EndpointManifestSchema.class);
+  }
+
   @Test
-  public void httpEndpointShouldBeRunning() throws IOException, InterruptedException {
+  public void httpEndpointShouldBeRunning() throws IOException {
     assertThat(restateHttpEndpointBean.isRunning()).isTrue();
     assertThat(restateHttpEndpointBean.actualPort()).isPositive();
 
-    // Check if discovery replies containing the Greeter service
-    var client = HttpClient.newBuilder().version(HttpClient.Version.HTTP_2).build();
-    var response =
-        client.send(
-            HttpRequest.newBuilder()
-                .GET()
-                .version(HttpClient.Version.HTTP_2)
-                .uri(
-                    URI.create(
-                        "http://localhost:" + restateHttpEndpointBean.actualPort() + "/discover"))
-                .header("Accept", "application/vnd.restate.endpointmanifest.v4+json")
-                .build(),
-            HttpResponse.BodyHandlers.ofString());
-    assertThat(response.version()).isEqualTo(HttpClient.Version.HTTP_2);
-    assertThat(response.statusCode()).isEqualTo(200);
+    // Check if discovery replies contain the Greeter service. Served over cleartext HTTP/2, so
+    // bidirectional streaming is on.
+    var endpointManifest = discover(restClient(HttpClient.Version.HTTP_2));
 
-    var endpointManifest =
-        new ObjectMapper().readValue(response.body(), EndpointManifestSchema.class);
-
+    assertThat(endpointManifest.getProtocolMode())
+        .isEqualTo(EndpointManifestSchema.ProtocolMode.BIDI_STREAM);
     assertThat(endpointManifest.getServices())
         .extracting(
             dev.restate.sdk.core.generated.manifest.Service::getName,
             dev.restate.sdk.core.generated.manifest.Service::getDocumentation,
             dev.restate.sdk.core.generated.manifest.Service::getJournalRetention)
         .containsOnly(tuple("greeter", "blabla", Duration.ofDays(2).toMillis()));
+  }
+
+  @Test
+  public void http11FallsBackToRequestResponse() throws IOException {
+    var endpointManifest = discover(restClient(HttpClient.Version.HTTP_1_1));
+
+    assertThat(endpointManifest.getProtocolMode())
+        .isEqualTo(EndpointManifestSchema.ProtocolMode.REQUEST_RESPONSE);
+  }
+
+  @Test
+  public void plainAppStaysNonWeb() {
+    // The starter must not force a web server: without a web provider, a plain app stays non-web.
+    assertThat(new SpringApplicationBuilder(Greeter.class).build().getWebApplicationType())
+        .isEqualTo(WebApplicationType.NONE);
   }
 }

@@ -10,24 +10,28 @@ package dev.restate.sdk.springboot;
 
 import dev.restate.sdk.auth.signing.RestateRequestIdentityVerifier;
 import dev.restate.sdk.endpoint.Endpoint;
-import dev.restate.sdk.http.vertx.HttpEndpointRequestHandler;
-import dev.restate.sdk.http.vertx.RestateHttpServer;
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.ListableBeanFactory;
+import org.springframework.beans.factory.support.DefaultListableBeanFactory;
+import org.springframework.boot.web.reactive.server.ConfigurableReactiveWebServerFactory;
+import org.springframework.boot.web.server.WebServer;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.SmartLifecycle;
+import reactor.core.scheduler.Scheduler;
+import reactor.core.scheduler.Schedulers;
 
-/** Restate HTTP Endpoint serving {@link Endpoint} */
-public class RestateHttpEndpointBean implements InitializingBean, SmartLifecycle {
+/**
+ * Restate HTTP Endpoint serving {@link Endpoint} with the app's own web server (Tomcat, Jetty,
+ * Undertow or Reactor Netty) through a Spring Boot factory.
+ */
+public class RestateHttpEndpointBean implements InitializingBean, SmartLifecycle, BeanFactoryAware {
 
   private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -35,18 +39,20 @@ public class RestateHttpEndpointBean implements InitializingBean, SmartLifecycle
 
   private volatile boolean running;
 
-  private final @Nullable HttpEndpointRequestHandler handler;
+  private @Nullable RestateHttpHandler handler;
 
-  private volatile @Nullable Vertx vertx;
+  private volatile @Nullable Scheduler workerScheduler;
+
+  private volatile @Nullable WebServer webServer;
 
   private volatile int actualPort = -1;
+
+  private @Nullable ListableBeanFactory beanFactory;
 
   public RestateHttpEndpointBean(
       Endpoint endpoint, RestateHttpServerProperties restateHttpServerProperties) {
     this.restateHttpServerProperties = restateHttpServerProperties;
-    this.handler =
-        HttpEndpointRequestHandler.fromEndpoint(
-            endpoint, restateHttpServerProperties.isDisableBidirectionalStreaming());
+    initHandler(endpoint);
   }
 
   @Deprecated
@@ -90,9 +96,31 @@ public class RestateHttpEndpointBean implements InitializingBean, SmartLifecycle
     }
 
     Endpoint endpoint = builder.build();
+    initHandler(endpoint);
+  }
+
+  private void initHandler(Endpoint endpoint) {
+    RestateHttpServerProperties props = this.restateHttpServerProperties;
+    final Supplier<Scheduler.Worker> workerSupplier;
+    if (props.isVirtualThreads()) {
+      // One virtual thread per request.
+      workerSupplier = RestateHttpHandler.virtualThreadWorkerSupplier();
+    } else if (props.getWorkers() > 0) {
+      Scheduler scheduler = Schedulers.newParallel("restate-http", props.getWorkers());
+      this.workerScheduler = scheduler;
+      workerSupplier = scheduler::createWorker;
+    } else {
+      workerSupplier = Schedulers.parallel()::createWorker;
+    }
     this.handler =
-        HttpEndpointRequestHandler.fromEndpoint(
-            endpoint, restateHttpServerProperties.isDisableBidirectionalStreaming());
+        new RestateHttpHandler(endpoint, !props.isDisableBidirectionalStreaming(), workerSupplier);
+  }
+
+  @Override
+  public void setBeanFactory(BeanFactory beanFactory) {
+    if (beanFactory instanceof ListableBeanFactory listableBeanFactory) {
+      this.beanFactory = listableBeanFactory;
+    }
   }
 
   @Deprecated
@@ -101,44 +129,39 @@ public class RestateHttpEndpointBean implements InitializingBean, SmartLifecycle
 
   @Override
   public void start() {
-    HttpEndpointRequestHandler handler = this.handler;
+    RestateHttpHandler handler = this.handler;
     if (handler == null) {
       // No service registered, nothing to start.
       this.running = true;
       return;
     }
-    int instances =
-        this.restateHttpServerProperties.getEventLoops() > 0
-            ? this.restateHttpServerProperties.getEventLoops()
-            : VertxOptions.DEFAULT_EVENT_LOOP_POOL_SIZE;
-    Vertx vertx = Vertx.vertx(new VertxOptions().setEventLoopPoolSize(instances));
-    this.vertx = vertx;
-    // A negative port makes all the server instances share the same random port, whereas port 0
-    // would make each instance bind a different random port.
-    int listenPort =
-        this.restateHttpServerProperties.getPort() == 0
-            ? -1
-            : this.restateHttpServerProperties.getPort();
-    AtomicInteger actualPortHolder = new AtomicInteger();
     try {
-      // Deploy one HttpServer (and one handler) per event loop, spreading connections across them.
-      vertx
-          .deployVerticle(
-              () -> new ServerVerticle(handler, listenPort, actualPortHolder),
-              new DeploymentOptions().setInstances(instances))
-          .toCompletionStage()
-          .toCompletableFuture()
-          .get();
-      this.actualPort = actualPortHolder.get();
-      logger.info(
-          "Started Restate Spring HTTP server on port {} with {} event loop(s)",
-          this.actualPort,
-          instances);
+      ListableBeanFactory beanFactory = this.beanFactory;
+      if (beanFactory == null) {
+        // Not created as a Spring bean: fall back to the classpath.
+        beanFactory = new DefaultListableBeanFactory();
+      }
+      ConfigurableReactiveWebServerFactory factory = RestateWebServerFactories.create(beanFactory);
+      // Port 0 means a random port.
+      factory.setPort(this.restateHttpServerProperties.getPort());
+      if (!RestateWebServerFactories.servesH2c(factory)) {
+        logger.warn(
+            "{} does not serve cleartext HTTP/2 (h2c): the Restate endpoint on port {} falls back"
+                + " to request/response mode",
+            factory.getClass().getSimpleName(),
+            this.restateHttpServerProperties.getPort());
+      }
+      WebServer webServer = factory.getWebServer(handler);
+      webServer.start();
+      this.webServer = webServer;
+      this.actualPort = webServer.getPort();
+      logger.info("Started Restate Spring HTTP server on port {}", this.actualPort);
     } catch (Exception e) {
       logger.error(
           "Error when starting Restate Spring HTTP server on port {}",
           this.restateHttpServerProperties.getPort(),
           e);
+      this.actualPort = -1;
     }
     this.running = true;
   }
@@ -146,10 +169,15 @@ public class RestateHttpEndpointBean implements InitializingBean, SmartLifecycle
   @Override
   public void stop() {
     try {
-      Vertx vertx = this.vertx;
-      if (vertx != null) {
-        vertx.close().toCompletionStage().toCompletableFuture().get();
-        this.vertx = null;
+      WebServer webServer = this.webServer;
+      if (webServer != null) {
+        webServer.stop();
+        this.webServer = null;
+      }
+      Scheduler workerScheduler = this.workerScheduler;
+      if (workerScheduler != null) {
+        workerScheduler.dispose();
+        this.workerScheduler = null;
       }
       logger.info("Stopped Restate Spring HTTP server");
     } catch (Exception e) {
@@ -169,34 +197,5 @@ public class RestateHttpEndpointBean implements InitializingBean, SmartLifecycle
       return -1;
     }
     return this.actualPort;
-  }
-
-  /**
-   * Verticle deployed once per event loop, each creating its own {@link
-   * HttpEndpointRequestHandler}.
-   */
-  private static final class ServerVerticle extends AbstractVerticle {
-
-    private final HttpEndpointRequestHandler handler;
-    private final int port;
-    private final AtomicInteger actualPort;
-
-    private ServerVerticle(HttpEndpointRequestHandler handler, int port, AtomicInteger actualPort) {
-      this.handler = handler;
-      this.port = port;
-      this.actualPort = actualPort;
-    }
-
-    @Override
-    public void start(Promise<Void> startPromise) {
-      RestateHttpServer.fromHandler(vertx, handler)
-          .listen(port)
-          .onSuccess(
-              server -> {
-                actualPort.set(server.actualPort());
-                startPromise.complete();
-              })
-          .onFailure(startPromise::fail);
-    }
   }
 }

@@ -18,17 +18,20 @@ public class RestateHttpServerProperties {
 
   private final int port;
   private final boolean disableBidirectionalStreaming;
-  private final int eventLoops;
+  private final int workers;
+  private final boolean virtualThreads;
 
   @ConstructorBinding
   public RestateHttpServerProperties(
       @Name("port") @DefaultValue(value = "9080") int port,
       @Name("disableBidirectionalStreaming") @DefaultValue(value = "false")
           boolean disableBidirectionalStreaming,
-      @Name("eventLoops") @DefaultValue(value = "0") int eventLoops) {
+      @Name("workers") @DefaultValue(value = "0") int workers,
+      @Name("virtualThreads") @DefaultValue(value = "false") boolean virtualThreads) {
     this.port = port;
     this.disableBidirectionalStreaming = disableBidirectionalStreaming;
-    this.eventLoops = eventLoops;
+    this.workers = workers;
+    this.virtualThreads = virtualThreads;
   }
 
   /** Port to expose the HTTP server. */
@@ -37,11 +40,21 @@ public class RestateHttpServerProperties {
   }
 
   /**
-   * Number of event loops to run, spreading incoming connections across that many CPU cores. When
-   * {@code 0}, the default {@code 2 * availableProcessors} is used.
+   * Number of workers the endpoint executor runs on, spreading incoming requests across that many
+   * threads. When {@code 0}, the default of the underlying scheduler is used. Ignored when {@code
+   * virtualThreads} is true: each request then gets its own virtual thread.
    */
-  public int getEventLoops() {
-    return eventLoops;
+  public int getWorkers() {
+    return workers;
+  }
+
+  /**
+   * If true, run each request's worker on a virtual thread (requires Java 21+). The web server
+   * still owns the connection threads; this only concerns the per-request workers that drive the
+   * SDK core.
+   */
+  public boolean isVirtualThreads() {
+    return virtualThreads;
   }
 
   /**
