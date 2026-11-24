@@ -98,7 +98,7 @@ public class TomcatServerTest {
                           HttpRequest.BodyPublishers.ofString(
                               "{\"uri\":\"http://host.testcontainers.internal:"
                                   + bean.actualPort()
-                                  + "\""))
+                                  + "\"}"))
                       .uri(
                           URI.create(
                               "http://localhost:" + restate.getMappedPort(9070) + "/deployments"))
