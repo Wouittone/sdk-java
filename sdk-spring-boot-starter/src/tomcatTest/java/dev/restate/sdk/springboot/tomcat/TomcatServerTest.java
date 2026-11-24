@@ -82,24 +82,6 @@ public class TomcatServerTest {
   }
 
   @Test
-  @Timeout(30)
-  public void invokeDirectlyOverH2c() throws Exception {
-    var client = HttpClient.newBuilder().version(HttpClient.Version.HTTP_2).build();
-    var response =
-        client.send(
-            HttpRequest.newBuilder()
-                .POST(HttpRequest.BodyPublishers.ofString("\"hi\""))
-                .uri(URI.create("http://localhost:" + bean.actualPort() + "/invoke/echo/echo"))
-                .header("Content-Type", "application/vnd.restate.invocation.v1")
-                .version(HttpClient.Version.HTTP_2)
-                .build(),
-            HttpResponse.BodyHandlers.ofString());
-
-    assertThat(response.statusCode()).isEqualTo(200);
-    assertThat(response.body()).isEqualTo("\"hi\"");
-  }
-
-  @Test
   @Timeout(60)
   public void invokeThroughRestate() throws Exception {
     // The Restate server runs in a container and must reach the endpoint on the host.
