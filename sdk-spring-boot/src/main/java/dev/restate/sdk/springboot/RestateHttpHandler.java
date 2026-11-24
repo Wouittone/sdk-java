@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.ThreadContext;
@@ -46,6 +47,7 @@ import org.springframework.util.ClassUtils;
 import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.Sinks;
 import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 
@@ -145,6 +147,34 @@ final class RestateHttpHandler implements HttpHandler {
                   DataBufferUtils.release(buffer);
                   return Slice.wrap(copy);
                 });
+    // Subscribe the processor's output side first, via a sink: the state machine only starts once
+    // the output is subscribed, and output slices produced before that would be dropped. Only
+    // then wire the request body in, so a fully buffered body can't complete the invocation before
+    // the response is subscribed.
+    Sinks.Many<Slice> outputSink = Sinks.many().unicast().onBackpressureBuffer();
+    processor.subscribe(
+        new Flow.Subscriber<>() {
+          @Override
+          public void onSubscribe(Flow.Subscription subscription) {
+            subscription.request(Long.MAX_VALUE);
+          }
+
+          @Override
+          public void onNext(Slice slice) {
+            outputSink.tryEmitNext(slice);
+          }
+
+          @Override
+          public void onError(Throwable throwable) {
+            outputSink.tryEmitError(throwable);
+          }
+
+          @Override
+          public void onComplete() {
+            outputSink.tryEmitComplete();
+          }
+        });
+
     InputSubscription inputSubscription = new InputSubscription(processor);
     input.subscribe(inputSubscription);
 
@@ -152,7 +182,8 @@ final class RestateHttpHandler implements HttpHandler {
     // produced. The Slice is copied into a response buffer so a native-memory slice can be freed
     // safely.
     Flux<Publisher<DataBuffer>> output =
-        Flux.from(FlowAdapters.toPublisher(processor))
+        outputSink
+            .asFlux()
             .map(
                 slice -> {
                   DataBuffer buffer =
