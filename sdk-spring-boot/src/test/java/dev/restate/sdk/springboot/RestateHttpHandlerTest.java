@@ -106,7 +106,7 @@ class RestateHttpHandlerTest {
                     Unpooled.wrappedBuffer("ld\"".getBytes(StandardCharsets.UTF_8))));
     MockServerHttpRequest request =
         MockServerHttpRequest.post("/invoke/greeter/greet")
-            .header("content-type", "application/json")
+            .header("content-type", "application/vnd.restate.invocation.v6")
             .body(Flux.fromIterable(chunks));
     MockServerHttpResponse response = new MockServerHttpResponse();
 
@@ -197,7 +197,7 @@ class RestateHttpHandlerTest {
       MockServerHttpRequest request =
           MockServerHttpRequest.post("/invoke/greeter/greet")
               .header("x-restate-invocation-id", "inv-1")
-              .header("content-type", "application/json")
+              .header("content-type", "application/vnd.restate.invocation.v6")
               .body(
                   Flux.just(
                       bufferFactory.wrap(
