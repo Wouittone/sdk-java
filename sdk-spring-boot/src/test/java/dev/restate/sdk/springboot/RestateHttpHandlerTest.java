@@ -11,7 +11,6 @@ package dev.restate.sdk.springboot;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dev.restate.sdk.Context;
 import dev.restate.sdk.annotation.Handler;
 import dev.restate.sdk.annotation.Name;
 import dev.restate.sdk.annotation.Service;
@@ -46,7 +45,7 @@ class RestateHttpHandlerTest {
   public static class Greeter {
 
     @Handler
-    public String greet(Context ctx, String person) {
+    public String greet(String person) {
       return "Hello " + person;
     }
   }
