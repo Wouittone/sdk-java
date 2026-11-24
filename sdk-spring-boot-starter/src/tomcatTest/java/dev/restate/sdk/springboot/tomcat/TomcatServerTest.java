@@ -90,7 +90,7 @@ public class TomcatServerTest {
             HttpRequest.newBuilder()
                 .POST(HttpRequest.BodyPublishers.ofString("\"hi\""))
                 .uri(URI.create("http://localhost:" + bean.actualPort() + "/invoke/echo/echo"))
-                .header("Content-Type", "application/vnd.restate.invocation.v6")
+                .header("Content-Type", "application/vnd.restate.invocation.v1")
                 .version(HttpClient.Version.HTTP_2)
                 .build(),
             HttpResponse.BodyHandlers.ofString());
