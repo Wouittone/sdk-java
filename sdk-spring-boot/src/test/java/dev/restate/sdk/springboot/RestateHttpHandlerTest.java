@@ -99,11 +99,15 @@ class RestateHttpHandlerTest {
     List<NettyDataBuffer> chunks =
         List.of(
             (NettyDataBuffer)
-                bufferFactory.wrap(Unpooled.wrappedBuffer("Wor".getBytes(StandardCharsets.UTF_8))),
+                bufferFactory.wrap(
+                    Unpooled.wrappedBuffer("\"Wor".getBytes(StandardCharsets.UTF_8))),
             (NettyDataBuffer)
-                bufferFactory.wrap(Unpooled.wrappedBuffer("ld".getBytes(StandardCharsets.UTF_8))));
+                bufferFactory.wrap(
+                    Unpooled.wrappedBuffer("ld\"".getBytes(StandardCharsets.UTF_8))));
     MockServerHttpRequest request =
-        MockServerHttpRequest.post("/invoke/greeter/greet").body(Flux.fromIterable(chunks));
+        MockServerHttpRequest.post("/invoke/greeter/greet")
+            .header("content-type", "application/json")
+            .body(Flux.fromIterable(chunks));
     MockServerHttpResponse response = new MockServerHttpResponse();
 
     handler.handle(request, response).block();
@@ -157,7 +161,35 @@ class RestateHttpHandlerTest {
 
   @Test
   void logContextDoesNotLeakAcrossTasksOnTheSameWorker() throws Exception {
-    Scheduler.Worker worker = Schedulers.parallel().createWorker();
+    Scheduler.Worker delegate = Schedulers.parallel().createWorker();
+    // The handler disposes its worker when the request completes; keep the delegate alive so the
+    // verification task below can still run on the same worker thread.
+    Scheduler.Worker worker =
+        new Scheduler.Worker() {
+          @Override
+          public Disposable schedule(Runnable task) {
+            return delegate.schedule(task);
+          }
+
+          @Override
+          public Disposable schedule(Runnable task, long delay, TimeUnit unit) {
+            return delegate.schedule(task, delay, unit);
+          }
+
+          @Override
+          public Disposable schedulePeriodically(
+              Runnable task, long initialDelay, long period, TimeUnit unit) {
+            return delegate.schedulePeriodically(task, initialDelay, period, unit);
+          }
+
+          @Override
+          public void dispose() {}
+
+          @Override
+          public boolean isDisposed() {
+            return delegate.isDisposed();
+          }
+        };
     try {
       RestateHttpHandler handler = new RestateHttpHandler(endpoint, true, () -> worker);
       NettyDataBufferFactory bufferFactory =
@@ -165,10 +197,11 @@ class RestateHttpHandlerTest {
       MockServerHttpRequest request =
           MockServerHttpRequest.post("/invoke/greeter/greet")
               .header("x-restate-invocation-id", "inv-1")
+              .header("content-type", "application/json")
               .body(
                   Flux.just(
                       bufferFactory.wrap(
-                          Unpooled.wrappedBuffer("World".getBytes(StandardCharsets.UTF_8)))));
+                          Unpooled.wrappedBuffer("\"World\"".getBytes(StandardCharsets.UTF_8)))));
 
       handler.handle(request, new MockServerHttpResponse()).block();
 
@@ -184,7 +217,7 @@ class RestateHttpHandlerTest {
       assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue();
       assertThat(seen.get()).isNull();
     } finally {
-      worker.dispose();
+      delegate.dispose();
     }
   }
 }
