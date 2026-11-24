@@ -9,19 +9,18 @@
 package dev.restate.sdk.springboot.tomcat;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.restate.client.Client;
 import dev.restate.sdk.core.generated.manifest.EndpointManifestSchema;
 import dev.restate.sdk.springboot.RestateHttpEndpointBean;
-import dev.restate.sdk.springboot.testapp.Echo;
-import dev.restate.sdk.springboot.testapp.RestateTestApp;
+import dev.restate.sdk.springboot.test.RestateTestApp;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -113,27 +112,11 @@ public class TomcatServerTest {
       // Restate dials http:// deployments over HTTP/2 prior knowledge, so the invocation goes
       // through Tomcat's h2c path and the servlet adapter in bidirectional streaming mode.
       Client client = Client.connect("http://localhost:" + restate.getMappedPort(8080));
-      Echo echo = client.service(Echo.class);
-      // The deployment is discovered asynchronously: retry until it is ready. Each attempt gets
-      // its own timeout so a hung invocation fails fast instead of blocking the test worker.
-      var attempts = Executors.newCachedThreadPool();
-      try {
-        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(45);
-        while (true) {
-          try {
-            assertThat(attempts.submit(() -> echo.echo("hi")).get(10, TimeUnit.SECONDS))
-                .isEqualTo("hi");
-            return;
-          } catch (Exception e) {
-            if (System.nanoTime() > deadline) {
-              throw e;
-            }
-            Thread.sleep(500);
-          }
-        }
-      } finally {
-        attempts.shutdownNow();
-      }
+      RestateTestApp.Echo echo = client.service(RestateTestApp.Echo.class);
+      // The deployment is discovered asynchronously: wait until the invocation succeeds.
+      await()
+          .atMost(Duration.ofSeconds(45))
+          .untilAsserted(() -> assertThat(echo.echo("hi")).isEqualTo("hi"));
     }
   }
 }

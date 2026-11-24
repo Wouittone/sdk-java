@@ -28,13 +28,15 @@ dependencies {
   api(project(":sdk-interceptor-micrometer"))
   runtimeOnly(project(":bytebuddy-proxy-support")) { isTransitive = true }
 
-  // Spring boot starter brought in here for convenience
+  // Spring boot starter brought in here for convenience. The web server implementation is left
+  // to the application: an app without any web provider fails at startup when the Restate
+  // endpoint looks for a container.
   api(libs.spring.boot.starter)
-  // So that an app with no web stack still has a server for the Restate endpoint port
-  api(libs.spring.boot.starter.reactor.netty)
 
   // Testing
   testImplementation(libs.spring.boot.starter.test)
+  // Web provider for the endpoint bean tests; the container suites bring their own.
+  testImplementation(libs.spring.boot.starter.reactor.netty)
   // Pin JUnit explicitly: the Spring Boot BOM manages an older junit-jupiter than the
   // junit-platform-launcher pinned below, which breaks the Gradle test executor.
   testImplementation(libs.junit.jupiter)
