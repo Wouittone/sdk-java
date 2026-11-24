@@ -41,7 +41,7 @@ jobs:
         uses: actions/upload-artifact@v7.0.2
         with:
           name: Test results
-          path: "**/test-results/test/*.xml"
+          path: "**/test-results/**/*.xml"
 
   test-javadocs:
     name: Test Javadocs and dokka
