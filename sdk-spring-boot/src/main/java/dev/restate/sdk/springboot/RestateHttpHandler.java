@@ -23,8 +23,6 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.ThreadContext;
@@ -193,9 +191,8 @@ final class RestateHttpHandler implements HttpHandler {
    * on Java 17.
    */
   static Supplier<Scheduler.Worker> virtualThreadWorkerSupplier() {
-    ThreadFactory threadFactory = virtualThreadFactory();
     return () -> {
-      ExecutorService executor = Executors.newSingleThreadExecutor(threadFactory);
+      ExecutorService executor = newVirtualThreadPerTaskExecutor();
       Scheduler.Worker delegate = Schedulers.fromExecutorService(executor).createWorker();
       return new Scheduler.Worker() {
         @Override
@@ -228,10 +225,12 @@ final class RestateHttpHandler implements HttpHandler {
     };
   }
 
-  private static ThreadFactory virtualThreadFactory() {
+  private static ExecutorService newVirtualThreadPerTaskExecutor() {
     try {
-      Object builder = Thread.class.getMethod("ofVirtual").invoke(null);
-      return (ThreadFactory) builder.getClass().getMethod("factory").invoke(builder);
+      return (ExecutorService)
+          Class.forName("java.util.concurrent.Executors")
+              .getMethod("newVirtualThreadPerTaskExecutor")
+              .invoke(null);
     } catch (ReflectiveOperationException e) {
       throw new IllegalStateException(
           "restate.sdk.http.virtualThreads=true requires Java 21+ (virtual threads)", e);
