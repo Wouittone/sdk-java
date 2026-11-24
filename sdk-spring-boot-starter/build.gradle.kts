@@ -84,6 +84,13 @@ testing {
   }
 }
 
+// Supplies the versions of the catalog entries that have none (spring-web, ...).
+dependencyManagement {
+  imports {
+    mavenBom("org.springframework.boot:spring-boot-dependencies:${libs.versions.spring.boot.get()}")
+  }
+}
+
 tasks.named("check") {
   dependsOn(testing.suites.named("tomcatTest"))
   dependsOn(testing.suites.named("webfluxTest"))
